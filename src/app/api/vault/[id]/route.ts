@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServer } from '@/lib/supabase/server'
 
-// THE FIX: We are using a @ts-expect-error directive to tell the TypeScript compiler
-// to bypass the complex type check for the 'params' object. This is the definitive
-// solution to this specific build error.
 // @ts-expect-error - The params object is correctly passed by Next.js
 export async function GET(req: NextRequest, { params }) {
   const supabase = await createServer()
@@ -43,7 +40,9 @@ export async function PUT(req: NextRequest, { params }) {
   const { id } = params
   const body = await req.json()
 
-  const updateData: { [key: string]: any } = {}
+  // THE FIX: We provide a more specific type for the updateData object,
+  // replacing the generic 'any' with a union of possible types.
+  const updateData: { [key: string]: string | string[] | number | null } = {}
 
   if ('title' in body) updateData.processed_title = body.title;
   if ('summary' in body) updateData.processed_summary = body.summary;
