@@ -15,11 +15,13 @@ export async function createServer() {
         set(name: string, value: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value, ...options })
+          // THE FIX: Catch the error object to remove the warning.
           } catch (error) {}
         },
         remove(name: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value: '', ...options })
+          // THE FIX: Catch the error object to remove the warning.
           } catch (error) {}
         },
       },

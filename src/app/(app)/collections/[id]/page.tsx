@@ -2,20 +2,17 @@ import { createServer } from '@/lib/supabase/server'
 import { VaultGrid } from '@/app/(app)/vault/_components/vault-grid'
 import { notFound } from 'next/navigation'
 
-// THE FIX: We are explicitly defining the type for the props object
-// that Next.js passes to dynamic server pages.
-type PageProps = {
-  params: {
-    id: string;
-  };
-  searchParams?: { [key: string]: string | string[] | undefined };
-};
-
-export default async function CollectionPage({ params }: PageProps) {
+// THE FIX: We remove our custom 'PageProps' type and define the props directly
+// in the function signature. This is the most robust way to handle props for
+// dynamic server pages in Next.js.
+export default async function CollectionPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const supabase = await createServer()
   const collectionId = params.id
 
-  // Fetch the collection's details, its items, AND the full list of all collections.
   const [
     { data: collection, error: collectionError },
     { data: items },
@@ -26,7 +23,6 @@ export default async function CollectionPage({ params }: PageProps) {
     supabase.from('collections').select('id, name').order('name')
   ]);
 
-  // If the collection doesn't exist, show a 404 page.
   if (collectionError) {
     notFound();
   }
@@ -37,7 +33,6 @@ export default async function CollectionPage({ params }: PageProps) {
         <p className="text-sm text-muted-foreground">Collection</p>
         <h1 className="text-3xl font-bold">{collection.name}</h1>
       </div>
-      {/* Pass both the items for this collection AND the full list of collections to the grid. */}
       <VaultGrid initialItems={items || []} collections={allCollections || []} />
     </div>
   )
