@@ -17,7 +17,7 @@ type SearchResult = {
 function SearchResults() {
   const searchParams = useSearchParams()
   const query = searchParams.get('q') || ''
-  const type = searchParams.get('type') || 'all' // Get the type filter from the URL
+  const type = searchParams.get('type') || 'all'
   const [results, setResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -31,7 +31,7 @@ function SearchResults() {
           const response = await fetch('/api/search', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query, type }), // Pass the type filter to the API
+            body: JSON.stringify({ query, type }),
           })
           if (!response.ok) {
             const err = await response.json()
@@ -39,8 +39,13 @@ function SearchResults() {
           }
           const data = await response.json()
           setResults(data)
-        } catch (err: any) {
-          setError(err.message)
+        // THE FIX: Explicitly type the error object as 'unknown'
+        } catch (err: unknown) {
+          if (err instanceof Error) {
+            setError(err.message)
+          } else {
+            setError('An unexpected error occurred.')
+          }
         } finally {
           setIsLoading(false)
         }
@@ -49,7 +54,7 @@ function SearchResults() {
     } else {
       setResults([])
     }
-  }, [query, type]) // Re-run the effect if the type filter changes
+  }, [query, type])
 
   if (isLoading) {
     return (
@@ -69,7 +74,6 @@ function SearchResults() {
         <h1 className="text-3xl font-bold">
           Search Results for: <span className="text-blue-600">&quot;{query}&quot;</span>
         </h1>
-        {/* Display the active filter to the user */}
         {type !== 'all' && (
           <Badge variant="secondary" className="capitalize text-base">
             {type}

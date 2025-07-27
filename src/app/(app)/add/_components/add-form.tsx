@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -16,7 +16,7 @@ export function AddForm({ contentType }: AddFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{type: 'error' | 'success', text: string} | null>(null)
-  
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setIsLoading(true)
@@ -30,14 +30,22 @@ export function AddForm({ contentType }: AddFormProps) {
         method: 'POST',
         body: formData,
       })
+
       const result = await response.json()
+
       if (!response.ok) {
         throw new Error(result.error || 'An unknown error occurred.')
       }
-      // On success, redirect the user to their vault to see the new item.
+      
       router.push('/vault')
-    } catch (error: any) {
-      setMessage({type: 'error', text: error.message})
+
+    // THE FIX: Explicitly type the error object as 'Error'
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setMessage({type: 'error', text: error.message})
+      } else {
+        setMessage({type: 'error', text: 'An unexpected error occurred.'})
+      }
       setIsLoading(false)
     }
   }

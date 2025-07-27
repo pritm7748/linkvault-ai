@@ -8,10 +8,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChromeIcon, KeyRound, Mail, LoaderCircle, Wand2 } from 'lucide-react'
+// THE FIX: Removed unused 'KeyRound', 'Mail', and 'Wand2' imports
+import { ChromeIcon, LoaderCircle } from 'lucide-react' 
 import { GitHubLogoIcon } from '@radix-ui/react-icons'
 
-// --- Reusable Form for Email/Password ---
 function PasswordAuthForm({ action }: { action: 'signin' | 'signup' }) {
   const router = useRouter()
   const supabase = createClient()
@@ -64,7 +64,6 @@ function PasswordAuthForm({ action }: { action: 'signin' | 'signup' }) {
   )
 }
 
-// --- New Form for Magic Link ---
 function MagicLinkForm() {
     const supabase = createClient()
     const [email, setEmail] = useState('')
@@ -98,7 +97,6 @@ function MagicLinkForm() {
     )
 }
 
-// --- Main Login Page Component ---
 export default function LoginPage() {
   const supabase = createClient()
 
@@ -147,7 +145,8 @@ export default function LoginPage() {
          <div className="text-center">
             <h1 className="text-5xl font-bold text-white tracking-tighter">Save Anything.</h1>
             <h1 className="text-5xl font-bold text-white tracking-tighter">Find Everything.</h1>
-            <p className="mt-4 text-lg text-purple-200">The last knowledge tool you'll ever need.</p>
+            {/* THE FIX: Replaced ' with &apos; */}
+            <p className="mt-4 text-lg text-purple-200">The last knowledge tool you&apos;ll ever need.</p>
          </div>
       </div>
     </div>

@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServer } from '@/lib/supabase/server'
 import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai'
-import * as cheerio from 'cheerio' // Import the cheerio library
+import * as cheerio from 'cheerio'
 
-// Initialize the Google Generative AI client with your API key.
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-// Define the exact JSON structure we want the AI to return.
 const jsonSchema: Schema = {
   type: SchemaType.OBJECT,
   properties: {
@@ -40,80 +38,57 @@ export async function POST(req: NextRequest) {
     const contentType = formData.get('contentType') as string
     let originalContent: string | null = null;
     let textToAnalyze: string = "";
+    let contentForAI: string | (string | { inlineData: { mimeType: string; data: string; } })[];
 
-    // --- Prepare the content for analysis based on its type ---
     if (contentType === 'image') {
       const file = formData.get('file') as File;
       if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 });
       const buffer = Buffer.from(await file.arrayBuffer());
       const base64Data = buffer.toString('base64');
-      // For images, the prompt itself contains the data
-      textToAnalyze = JSON.stringify([
+      contentForAI = [
         "Analyze this image. Extract any text, describe the content, and identify key information. Provide a title, a concise summary, relevant tags, and any named entities (dates, people, organizations).",
         { inlineData: { mimeType: file.type, data: base64Data } }
-      ]);
+      ];
       originalContent = `Image Upload: ${file.name}`;
-    } else if (contentType === 'link') {
-        const url = formData.get('content') as string;
-        originalContent = url;
-
-        // --- NEW WEB SCRAPING LOGIC ---
-        try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`Failed to fetch URL: ${response.statusText}`);
+    } else {
+        if (contentType === 'link') {
+            const url = formData.get('content') as string;
+            originalContent = url;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Failed to fetch URL: ${response.statusText}`);
+                const html = await response.text();
+                const $ = cheerio.load(html);
+                $('script, style, nav, footer, header, aside').remove();
+                let bodyText = $('article, main, body').text();
+                bodyText = bodyText.replace(/\s\s+/g, ' ').trim();
+                textToAnalyze = bodyText.substring(0, 8000);
+            } catch (scrapeError: unknown) {
+                console.error("Scraping error:", scrapeError);
+                textToAnalyze = `The provided URL could not be scraped. Please analyze the URL itself: ${originalContent}`;
             }
-            const html = await response.text();
-            const $ = cheerio.load(html);
-            
-            // Remove irrelevant elements like scripts, styles, navbars, and footers
-            $('script, style, nav, footer, header, aside').remove();
-            
-            // Extract text from common content-holding elements
-            let bodyText = $('article, main, body').text();
-
-            // Clean up the text: remove excess whitespace and newlines
-            bodyText = bodyText.replace(/\s\s+/g, ' ').trim();
-            
-            // Limit the text to a reasonable length to avoid exceeding API limits
-            textToAnalyze = bodyText.substring(0, 8000);
-
-        } catch (scrapeError: any) {
-            console.error("Scraping error:", scrapeError);
-            // Fallback: If scraping fails, just analyze the URL itself as before.
-            textToAnalyze = `The provided URL could not be scraped. Please analyze the URL itself: ${url}`;
+        } else { // 'note'
+            const note = formData.get('content') as string;
+            originalContent = note;
+            textToAnalyze = note;
         }
-        // --------------------------------
-
-    } else { // 'note'
-        const note = formData.get('content') as string;
-        originalContent = note;
-        textToAnalyze = note;
+        contentForAI = `Analyze the following content: "${textToAnalyze}". Provide a title, a concise summary, relevant tags, and any named entities (dates, people, organizations).`;
     }
 
-    // --- Call the Gemini API ---
     const model = genAI.getGenerativeModel({ 
         model: "gemini-1.5-flash",
         generationConfig: { responseMimeType: "application/json", responseSchema: jsonSchema }
     });
     
-    // The prompt is now standardized
-    const finalPrompt = `Analyze the following content: "${textToAnalyze}". Provide a title, a concise summary, relevant tags, and any named entities (dates, people, organizations).`;
-    
-    // For images, we need to handle the special prompt format
-    const contentForAI = contentType === 'image' ? JSON.parse(textToAnalyze) : finalPrompt;
-
     const result = await model.generateContent(contentForAI);
     const response = result.response;
     const aiResponseText = response.text();
     const aiJson = JSON.parse(aiResponseText);
     
-    // --- Generate Embedding ---
     const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
     const embeddingResult = await embeddingModel.embedContent(aiJson.summary);
     const embedding = embeddingResult.embedding.values;
 
-    // --- Save to Supabase ---
     const { data: newItem, error: dbError } = await supabase
       .from('vault_items')
       .insert({
@@ -134,8 +109,12 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ message: 'Success', newItem });
-  } catch (error: any) {
+  // THE FIX: Explicitly type the error object
+  } catch (error: unknown) {
     console.error("Error in /api/process:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error instanceof Error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
   }
 }

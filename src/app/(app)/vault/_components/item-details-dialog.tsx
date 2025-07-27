@@ -50,8 +50,13 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
           setTitle(data.processed_title || '')
           setSummary(data.processed_summary || '')
           setTags((data.processed_tags || []).join(', '))
-        } catch (err: any) {
-          setError(err.message)
+        // THE FIX: Explicitly type the error object
+        } catch (err: unknown) {
+          if (err instanceof Error) {
+            setError(err.message)
+          } else {
+            setError('An unexpected error occurred.')
+          }
         } finally {
           setIsLoading(false)
         }
@@ -80,8 +85,13 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
       const updatedItem = await response.json()
       onUpdate(updatedItem)
       setIsEditing(false)
-    } catch (err: any) {
-        setError(err.message)
+    // THE FIX: Explicitly type the error object
+    } catch (err: unknown) {
+        if (err instanceof Error) {
+            setError(err.message)
+        } else {
+            setError('An unexpected error occurred.')
+        }
     } finally {
         setIsLoading(false)
     }
@@ -89,7 +99,6 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      {/* THE FIX: Increased max-width and added max-height with scrolling */}
       <DialogContent className="bg-white border-slate-200 text-slate-900 sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className={isEditing ? 'sr-only' : 'text-2xl font-serif'}>

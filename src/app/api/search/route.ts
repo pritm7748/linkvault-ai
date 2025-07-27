@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { query, type } = await req.json() // Expect 'type' in the request body
+    const { query, type } = await req.json()
     if (!query) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 })
     }
@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
 
     const { data: items, error } = await supabase.rpc('match_vault_items', {
       query_embedding: queryEmbedding,
-      match_threshold: 0.7, // Adjust this value to control sensitivity (0.7 is a good starting point)
-      match_count: 20,      // Fetch a slightly larger pool for filtering
+      match_threshold: 0.7,
+      match_count: 20,
     })
 
     if (error) {
@@ -32,17 +32,18 @@ export async function POST(req: NextRequest) {
       throw new Error(`Database error: ${error.message}`)
     }
 
-    // --- NEW FILTERING LOGIC ---
-    // If a type filter is provided (and it's not 'all'), filter the results.
     const filteredItems = type && type !== 'all'
-      ? items.filter((item: any) => item.content_type === type)
+      ? items.filter((item: { content_type: string }) => item.content_type === type)
       : items;
-    // -------------------------
 
     return NextResponse.json(filteredItems)
 
-  } catch (error: any) {
+  // THE FIX: Explicitly type the error object
+  } catch (error: unknown) {
     console.error("Error in /api/search:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error instanceof Error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
   }
 }
