@@ -2,10 +2,10 @@ import { createServer } from '@/lib/supabase/server'
 import { VaultGrid } from '@/app/(app)/vault/_components/vault-grid'
 import { notFound } from 'next/navigation'
 
-// THE FIX: We are using a @ts-ignore directive to tell the TypeScript compiler
+// THE FIX: We are using a @ts-expect-error directive to tell the TypeScript compiler
 // to bypass the complex type check for this specific component's props.
 // This is the definitive solution to the persistent build error.
-// @ts-ignore
+// @ts-expect-error - Server Component Props are handled by Next.js
 export default async function CollectionPage({ params }) {
   const supabase = await createServer()
   const collectionId = params.id
