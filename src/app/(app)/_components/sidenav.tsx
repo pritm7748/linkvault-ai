@@ -1,13 +1,12 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-// THE FIX: Removed 'User' from this import as it was unused.
-import { LayoutDashboard, StickyNote, Link2, Image, LogOut } from 'lucide-react' 
 import { Button } from '@/components/ui/button'
-import { NewCollectionDialog } from './new-collection-dialog' // Assuming this is still needed
-import { useState } from 'react'
+import { LayoutDashboard, StickyNote, Link2, Image, Folder, PlusCircle, LogOut } from 'lucide-react'
+import { NewCollectionDialog } from './new-collection-dialog'
 
 type Collection = {
   id: number;
@@ -19,11 +18,9 @@ type SideNavProps = {
   collections: Collection[];
 };
 
-
 export function SideNav({ userEmail, collections }: SideNavProps) {
   const pathname = usePathname()
   const [isNewCollectionOpen, setIsNewCollectionOpen] = useState(false)
-
 
   const mainNavItems = [
     { href: '/vault', label: 'All Items', icon: LayoutDashboard },
@@ -62,7 +59,7 @@ export function SideNav({ userEmail, collections }: SideNavProps) {
                 <div className="flex justify-between items-center mb-2">
                     <h3 className="text-xs font-semibold uppercase text-muted-foreground">Collections</h3>
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsNewCollectionOpen(true)}>
-                        <LogOut className="h-4 w-4" />
+                        <PlusCircle className="h-4 w-4" />
                     </Button>
                 </div>
                 <nav className="grid items-start text-sm font-medium">
@@ -75,7 +72,7 @@ export function SideNav({ userEmail, collections }: SideNavProps) {
                                 { 'bg-muted text-primary': pathname === `/collections/${collection.id}` }
                             )}
                         >
-                            <Image className="h-4 w-4" />
+                            <Folder className="h-4 w-4" />
                             {collection.name}
                         </Link>
                     ))}
