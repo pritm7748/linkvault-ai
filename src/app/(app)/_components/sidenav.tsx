@@ -19,7 +19,7 @@ type SideNavProps = {
   collections: Collection[];
 };
 
-// A new, reusable component for our navigation links
+// A reusable component for our navigation links
 const NavLink = ({ href, children }: { href: string, children: React.ReactNode }) => {
   const pathname = usePathname()
   return (
@@ -56,8 +56,6 @@ export function SideNav({ userEmail, collections }: SideNavProps) {
           </Link>
         </div>
         <div className="flex-1 overflow-y-auto">
-          {/* THE FIX: We now have two versions of the nav. One for desktop, one for mobile. */}
-          
           {/* Desktop Navigation (visible on md screens and up) */}
           <nav className="hidden md:grid items-start px-2 text-sm font-medium lg:px-4">
             {mainNavItems.map((item) => (
@@ -88,8 +86,21 @@ export function SideNav({ userEmail, collections }: SideNavProps) {
                       <PlusCircle className="h-4 w-4" />
                   </Button>
               </div>
-              {/* This nav is the same for both mobile and desktop, but links need to be wrapped for mobile */}
-              <nav className="grid items-start text-sm font-medium">
+              
+              {/* THE FIX: We now have two versions of the collections list as well. */}
+
+              {/* Desktop Collections List */}
+              <nav className="hidden md:grid items-start text-sm font-medium">
+                  {collections.map((collection) => (
+                    <NavLink key={collection.id} href={`/collections/${collection.id}`}>
+                        <Folder className="h-4 w-4" />
+                        {collection.name}
+                    </NavLink>
+                  ))}
+              </nav>
+
+              {/* Mobile Collections List */}
+              <nav className="grid md:hidden items-start text-sm font-medium">
                   {collections.map((collection) => (
                     <SheetClose asChild key={collection.id}>
                       <NavLink href={`/collections/${collection.id}`}>
