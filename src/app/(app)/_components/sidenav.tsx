@@ -11,11 +11,10 @@ import { NewCollectionDialog } from './new-collection-dialog'
 
 type Collection = { id: number; name: string };
 
-// THE FIX: Add 'isSheet' to the type definition
 type SideNavProps = {
   userEmail: string;
   collections: Collection[];
-  isSheet: boolean; 
+  isSheet: boolean;
 };
 
 const NavLink = ({ href, children }: { href: string, children: React.ReactNode }) => {
@@ -87,13 +86,16 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
               </nav>
           </div>
         </div>
+        {/* THE FIX: The user info block is now wrapped in a Link component */}
         <div className="mt-auto p-4 border-t">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-muted-foreground">Signed in as</p>
-              <p className="text-sm font-semibold truncate">{userEmail}</p>
-            </div>
-            <form action="/api/auth/signout" method="post">
+            <Link href="/profile" className="flex-grow hover:bg-slate-50 p-2 rounded-md -m-2">
+              <div>
+                <p className="text-xs text-muted-foreground">Signed in as</p>
+                <p className="text-sm font-semibold truncate">{userEmail}</p>
+              </div>
+            </Link>
+            <form action="/api/auth/signout" method="post" className="ml-2">
               <Button type="submit" variant="ghost" size="icon">
                 <LogOut className="h-5 w-5 text-muted-foreground hover:text-primary" />
               </Button>
