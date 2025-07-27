@@ -10,14 +10,12 @@ export function SearchBar() {
   const router = useRouter()
   const searchParams = useSearchParams()
   
-  // Initialize state from URL parameters for consistency
   const [query, setQuery] = useState(searchParams.get('q') || '')
   const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || 'all')
 
   const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     
-    // Create a new URLSearchParams object to build the query string
     const params = new URLSearchParams()
     params.set('q', query)
     if (typeFilter !== 'all') {
@@ -35,7 +33,8 @@ export function SearchBar() {
           type="search"
           name="query"
           placeholder="Ask your vault anything..."
-          className="w-full appearance-none bg-background pl-8 shadow-none"
+          // THE FIX: Added 'text-black' to ensure text is always visible
+          className="w-full appearance-none bg-background pl-8 shadow-none text-black"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />

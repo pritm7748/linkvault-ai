@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { LayoutDashboard, StickyNote, Link2, Image, Folder, PlusCircle, LogOut } from 'lucide-react'
+import { LayoutDashboard, StickyNote, Link2, Image, Folder, PlusCircle, LogOut, User } from 'lucide-react'
 import { NewCollectionDialog } from './new-collection-dialog'
 
 type Collection = {
@@ -31,7 +31,6 @@ export function SideNav({ userEmail, collections }: SideNavProps) {
 
   return (
     <>
-      {/* THE FIX: Removed the 'hidden' and 'md:block' classes from here */}
       <div className="flex h-full max-h-screen flex-col gap-2 bg-background">
         <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
           <Link href="/vault" className="flex items-center gap-2 font-serif text-lg font-bold">
@@ -81,9 +80,19 @@ export function SideNav({ userEmail, collections }: SideNavProps) {
         </div>
         <div className="mt-auto p-4 border-t">
           <div className="flex items-center justify-between">
-            <Link href="/profile" className="flex-grow">
-              <p className="text-xs text-muted-foreground">Profile</p>
-              <p className="text-sm font-semibold truncate">{userEmail}</p>
+            {/* THE FIX: Moved the Profile link into a proper nav item */}
+            <Link 
+              href="/profile" 
+              className={cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary w-full',
+                  { 'bg-muted text-primary': pathname === '/profile' }
+              )}
+            >
+              <User className="h-4 w-4" />
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold">Profile</span>
+                <span className="text-xs text-muted-foreground truncate">{userEmail}</span>
+              </div>
             </Link>
             <form action="/api/auth/signout" method="post">
               <Button type="submit" variant="ghost" size="icon">
