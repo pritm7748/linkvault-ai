@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, Fragment } from 'react' // Import Fragment
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -9,15 +9,12 @@ import { SheetClose } from '@/components/ui/sheet'
 import { LayoutDashboard, StickyNote, Link2, Image, Folder, PlusCircle, LogOut, User } from 'lucide-react'
 import { NewCollectionDialog } from './new-collection-dialog'
 
-type Collection = {
-  id: number;
-  name: string;
-};
+type Collection = { id: number; name: string };
 
 type SideNavProps = {
   userEmail: string;
   collections: Collection[];
-  isSheet: boolean; // This prop is the key to the fix
+  isSheet: boolean; // This new prop is the key to the fix
 };
 
 // A reusable component for our navigation links
@@ -47,8 +44,9 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
     { href: '/profile', label: 'Profile', icon: User },
   ]
   
-  // Conditionally wrap a component in SheetClose only if we are in a sheet
-  const LinkWrapper = isSheet ? SheetClose : 'div';
+  // Conditionally wrap a component in SheetClose only if we are in a sheet.
+  // Otherwise, use a Fragment, which does nothing.
+  const LinkWrapper = isSheet ? SheetClose : Fragment;
 
   return (
     <>
