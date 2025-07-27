@@ -19,7 +19,7 @@ type SideNavProps = {
   collections: Collection[];
 };
 
-// A reusable component for our navigation links
+// A new, reusable component for our navigation links
 const NavLink = ({ href, children }: { href: string, children: React.ReactNode }) => {
   const pathname = usePathname()
   return (
@@ -56,6 +56,8 @@ export function SideNav({ userEmail, collections }: SideNavProps) {
           </Link>
         </div>
         <div className="flex-1 overflow-y-auto">
+          {/* THE FIX: We now have two versions of the nav. One for desktop, one for mobile. */}
+          
           {/* Desktop Navigation (visible on md screens and up) */}
           <nav className="hidden md:grid items-start px-2 text-sm font-medium lg:px-4">
             {mainNavItems.map((item) => (
@@ -86,6 +88,7 @@ export function SideNav({ userEmail, collections }: SideNavProps) {
                       <PlusCircle className="h-4 w-4" />
                   </Button>
               </div>
+              {/* This nav is the same for both mobile and desktop, but links need to be wrapped for mobile */}
               <nav className="grid items-start text-sm font-medium">
                   {collections.map((collection) => (
                     <SheetClose asChild key={collection.id}>
@@ -99,7 +102,6 @@ export function SideNav({ userEmail, collections }: SideNavProps) {
           </div>
         </div>
         <div className="mt-auto p-4 border-t">
-          {/* THE FIX: Corrected the typo in className */}
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-muted-foreground">Signed in as</p>
