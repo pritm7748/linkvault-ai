@@ -1,39 +1,18 @@
 'use client'
 
-import { useState, Fragment } from 'react' // Import Fragment
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { SheetClose } from '@/components/ui/sheet'
-import { LayoutDashboard, StickyNote, Link2, Image, Folder, PlusCircle, LogOut, User } from 'lucide-react'
+import { LayoutDashboard, StickyNote, Link2, Image, Folder, PlusCircle, User, LogOut } from 'lucide-react'
 import { NewCollectionDialog } from './new-collection-dialog'
 
 type Collection = { id: number; name: string };
+type SideNavProps = { userEmail: string; collections: Collection[] };
 
-type SideNavProps = {
-  userEmail: string;
-  collections: Collection[];
-  isSheet: boolean; // This new prop is the key to the fix
-};
-
-// A reusable component for our navigation links
-const NavLink = ({ href, children }: { href: string, children: React.ReactNode }) => {
+export function SideNav({ userEmail, collections }: SideNavProps) {
   const pathname = usePathname()
-  return (
-    <Link
-      href={href}
-      className={cn(
-        'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-        { 'bg-muted text-primary': pathname === href }
-      )}
-    >
-      {children}
-    </Link>
-  )
-}
-
-export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
   const [isNewCollectionOpen, setIsNewCollectionOpen] = useState(false)
 
   const mainNavItems = [
@@ -43,30 +22,29 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
     { href: '/add/image', label: 'Add Image', icon: Image },
     { href: '/profile', label: 'Profile', icon: User },
   ]
-  
-  // Conditionally wrap a component in SheetClose only if we are in a sheet.
-  // Otherwise, use a Fragment, which does nothing.
-  const LinkWrapper = isSheet ? SheetClose : Fragment;
 
   return (
     <>
       <div className="flex h-full max-h-screen flex-col gap-2 bg-background">
         <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-          <LinkWrapper asChild>
-            <Link href="/vault" className="flex items-center gap-2 font-serif text-lg font-bold">
-              LinkVault AI
-            </Link>
-          </LinkWrapper>
+          <Link href="/vault" className="flex items-center gap-2 font-serif text-lg font-bold">
+            LinkVault AI
+          </Link>
         </div>
         <div className="flex-1 overflow-y-auto">
           <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
             {mainNavItems.map((item) => (
-              <LinkWrapper asChild key={item.href}>
-                <NavLink href={item.href}>
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                </NavLink>
-              </LinkWrapper>
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+                  { 'bg-muted text-primary': pathname === item.href }
+                )}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </Link>
             ))}
           </nav>
           <hr className="my-4" />
@@ -79,22 +57,28 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
               </div>
               <nav className="grid items-start text-sm font-medium">
                   {collections.map((collection) => (
-                    <LinkWrapper asChild key={collection.id}>
-                      <NavLink href={`/collections/${collection.id}`}>
-                          <Folder className="h-4 w-4" />
-                          {collection.name}
-                      </NavLink>
-                    </LinkWrapper>
+                    <Link
+                        key={collection.id}
+                        href={`/collections/${collection.id}`}
+                        className={cn(
+                            'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+                            { 'bg-muted text-primary': pathname === `/collections/${collection.id}` }
+                        )}
+                    >
+                        <Folder className="h-4 w-4" />
+                        {collection.name}
+                    </Link>
                   ))}
               </nav>
           </div>
         </div>
+        {/* THE FIX: This bottom section is now restored to its working state */}
         <div className="mt-auto p-4 border-t">
           <div className="flex items-center justify-between">
-            <div>
+            <Link href="/profile" className="flex-grow">
               <p className="text-xs text-muted-foreground">Signed in as</p>
               <p className="text-sm font-semibold truncate">{userEmail}</p>
-            </div>
+            </Link>
             <form action="/api/auth/signout" method="post">
               <Button type="submit" variant="ghost" size="icon">
                 <LogOut className="h-5 w-5 text-muted-foreground hover:text-primary" />
