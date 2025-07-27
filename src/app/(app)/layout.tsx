@@ -2,9 +2,8 @@ import Link from 'next/link'
 import { createServer } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-// THE FIX: Use absolute path aliases for robustness
-import { SideNav } from '@/app/(app)/_components/sidenav'
-import { SearchBar } from '@/app/(app)/_components/search-bar'
+import { SideNav } from './_components/sidenav'
+import { SearchBar } from './_components/search-bar'
 import { Menu } from 'lucide-react'
 
 export default async function AppLayout({
@@ -26,6 +25,7 @@ export default async function AppLayout({
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       {/* --- Desktop Sidebar --- */}
       <div className="hidden border-r bg-background md:block">
+        {/* We explicitly tell the sidebar it is NOT in a mobile sheet */}
         <SideNav 
           userEmail={session?.user.email || 'No user'} 
           collections={collections || []} 
@@ -48,6 +48,7 @@ export default async function AppLayout({
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col p-0">
+              {/* We explicitly tell the sidebar it IS in a mobile sheet */}
               <SideNav 
                 userEmail={session?.user.email || 'No user'} 
                 collections={collections || []} 

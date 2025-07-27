@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -9,12 +9,15 @@ import { SheetClose } from '@/components/ui/sheet'
 import { LayoutDashboard, StickyNote, Link2, Image, Folder, PlusCircle, LogOut, User } from 'lucide-react'
 import { NewCollectionDialog } from './new-collection-dialog'
 
-type Collection = { id: number; name: string };
+type Collection = {
+  id: number;
+  name: string;
+};
 
 type SideNavProps = {
   userEmail: string;
   collections: Collection[];
-  isSheet: boolean; // This new prop is the key to the fix
+  isSheet: boolean; // This prop is the key to the fix
 };
 
 // A reusable component for our navigation links
