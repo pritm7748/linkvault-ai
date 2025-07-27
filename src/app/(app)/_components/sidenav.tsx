@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { SheetClose } from '@/components/ui/sheet'
 import { LayoutDashboard, StickyNote, Link2, Image, Folder, PlusCircle, LogOut, User } from 'lucide-react'
 import { NewCollectionDialog } from './new-collection-dialog'
+import { useMediaQuery } from '@/hooks/use-media-query' // Import our new hook
 
 type Collection = {
   id: number;
@@ -38,6 +39,9 @@ const NavLink = ({ href, children }: { href: string, children: React.ReactNode }
 
 export function SideNav({ userEmail, collections }: SideNavProps) {
   const [isNewCollectionOpen, setIsNewCollectionOpen] = useState(false)
+  // THE FIX: We use our hook to check if the screen is mobile-sized.
+  // The '(max-width: 768px)' corresponds to Tailwind's 'md' breakpoint.
+  const isMobile = useMediaQuery('(max-width: 768px)')
 
   const mainNavItems = [
     { href: '/vault', label: 'All Items', icon: LayoutDashboard },
@@ -47,6 +51,43 @@ export function SideNav({ userEmail, collections }: SideNavProps) {
     { href: '/profile', label: 'Profile', icon: User },
   ]
 
+  const navContent = (
+    <div className="flex-1 overflow-y-auto">
+      <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+        {mainNavItems.map((item) => (
+          // THE FIX: We conditionally wrap the link based on the 'isMobile' state.
+          isMobile ? (
+            <SheetClose asChild key={item.href}>
+              <NavLink href={item.href}><item.icon className="h-4 w-4" />{item.label}</NavLink>
+            </SheetClose>
+          ) : (
+            <NavLink key={item.href} href={item.href}><item.icon className="h-4 w-4" />{item.label}</NavLink>
+          )
+        ))}
+      </nav>
+      <hr className="my-4" />
+      <div className="px-2 lg:px-4">
+          <div className="flex justify-between items-center mb-2">
+              <h3 className="text-xs font-semibold uppercase text-muted-foreground">Collections</h3>
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsNewCollectionOpen(true)}>
+                  <PlusCircle className="h-4 w-4" />
+              </Button>
+          </div>
+          <nav className="grid items-start text-sm font-medium">
+              {collections.map((collection) => (
+                isMobile ? (
+                  <SheetClose asChild key={collection.id}>
+                    <NavLink href={`/collections/${collection.id}`}><Folder className="h-4 w-4" />{collection.name}</NavLink>
+                  </SheetClose>
+                ) : (
+                  <NavLink key={collection.id} href={`/collections/${collection.id}`}><Folder className="h-4 w-4" />{collection.name}</NavLink>
+                )
+              ))}
+          </nav>
+      </div>
+    </div>
+  )
+
   return (
     <>
       <div className="flex h-full max-h-screen flex-col gap-2 bg-background">
@@ -55,63 +96,7 @@ export function SideNav({ userEmail, collections }: SideNavProps) {
             LinkVault AI
           </Link>
         </div>
-        <div className="flex-1 overflow-y-auto">
-          {/* Desktop Navigation (visible on md screens and up) */}
-          <nav className="hidden md:grid items-start px-2 text-sm font-medium lg:px-4">
-            {mainNavItems.map((item) => (
-              <NavLink key={item.href} href={item.href}>
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-
-          {/* Mobile Navigation (only visible on small screens, inside the sheet) */}
-          <nav className="grid md:hidden items-start px-2 text-sm font-medium lg:px-4">
-            {mainNavItems.map((item) => (
-              <SheetClose asChild key={item.href}>
-                <NavLink href={item.href}>
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                </NavLink>
-              </SheetClose>
-            ))}
-          </nav>
-
-          <hr className="my-4" />
-          <div className="px-2 lg:px-4">
-              <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-xs font-semibold uppercase text-muted-foreground">Collections</h3>
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsNewCollectionOpen(true)}>
-                      <PlusCircle className="h-4 w-4" />
-                  </Button>
-              </div>
-              
-              {/* THE FIX: We now have two versions of the collections list as well. */}
-
-              {/* Desktop Collections List */}
-              <nav className="hidden md:grid items-start text-sm font-medium">
-                  {collections.map((collection) => (
-                    <NavLink key={collection.id} href={`/collections/${collection.id}`}>
-                        <Folder className="h-4 w-4" />
-                        {collection.name}
-                    </NavLink>
-                  ))}
-              </nav>
-
-              {/* Mobile Collections List */}
-              <nav className="grid md:hidden items-start text-sm font-medium">
-                  {collections.map((collection) => (
-                    <SheetClose asChild key={collection.id}>
-                      <NavLink href={`/collections/${collection.id}`}>
-                          <Folder className="h-4 w-4" />
-                          {collection.name}
-                      </NavLink>
-                    </SheetClose>
-                  ))}
-              </nav>
-          </div>
-        </div>
+        {navContent}
         <div className="mt-auto p-4 border-t">
           <div className="flex items-center justify-between">
             <div>
