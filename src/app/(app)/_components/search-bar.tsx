@@ -33,8 +33,8 @@ export function SearchBar() {
           type="search"
           name="query"
           placeholder="Ask your vault anything..."
-          // THE FIX: Added 'text-black' to ensure text is always visible
-          className="w-full appearance-none bg-background pl-8 shadow-none text-black"
+          // THE FIX: Added 'text-foreground' to ensure text is always visible
+          className="w-full appearance-none bg-background pl-8 shadow-none text-foreground"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
