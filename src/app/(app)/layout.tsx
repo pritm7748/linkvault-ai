@@ -60,12 +60,7 @@ export default async function AppLayout({
           <div className="w-full flex-1">
             <SearchBar />
           </div>
-          <form action="/api/auth/signout" method="post" className="ml-2">
-            <Button type="submit" variant="ghost" size="icon">
-                <LogOut className="h-5 w-5 text-muted-foreground" />
-                <span className="sr-only">Sign Out</span>
-            </Button>
-          </form>
+          
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 bg-muted/40 overflow-y-auto">
           {children}
