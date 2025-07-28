@@ -1,14 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
-import { LoaderCircle, ExternalLink, Edit, Save } from 'lucide-react'
+import { LoaderCircle, ExternalLink, Edit, Save, Download } from 'lucide-react'
 
-// Define the type for a full vault item
 type VaultItemFull = {
   id: number;
   created_at: string;
@@ -17,6 +17,7 @@ type VaultItemFull = {
   processed_title: string | null;
   processed_summary: string | null;
   processed_tags: string[] | null;
+  storage_path: string | null;
 };
 
 type ItemDetailsDialogProps = {
@@ -31,11 +32,10 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
   const [isLoading, setIsLoading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // Form state for editing
   const [title, setTitle] = useState('')
   const [summary, setSummary] = useState('')
   const [tags, setTags] = useState('')
+  const supabase = createClient()
 
   useEffect(() => {
     if (itemId && isOpen) {
@@ -50,13 +50,8 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
           setTitle(data.processed_title || '')
           setSummary(data.processed_summary || '')
           setTags((data.processed_tags || []).join(', '))
-        // THE FIX: Explicitly type the error object
-        } catch (err: unknown) {
-          if (err instanceof Error) {
-            setError(err.message)
-          } else {
-            setError('An unexpected error occurred.')
-          }
+        } catch (err: any) {
+          setError(err.message)
         } finally {
           setIsLoading(false)
         }
@@ -85,15 +80,28 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
       const updatedItem = await response.json()
       onUpdate(updatedItem)
       setIsEditing(false)
-    // THE FIX: Explicitly type the error object
-    } catch (err: unknown) {
-        if (err instanceof Error) {
-            setError(err.message)
-        } else {
-            setError('An unexpected error occurred.')
-        }
+    } catch (err: any) {
+        setError(err.message)
     } finally {
         setIsLoading(false)
+    }
+  }
+
+  const handleDownload = async () => {
+    if (!item || !item.storage_path) return;
+    try {
+      // THE FIX: Changed 'vault_images' to 'vault.images'
+      const { data, error } = await supabase.storage
+        .from('vault.images')
+        .createSignedUrl(item.storage_path, 60)
+
+      if (error) {
+        throw error
+      }
+      window.open(data.signedUrl, '_blank');
+    } catch (error) {
+      console.error('Error downloading file:', error)
+      setError('Could not create download link.')
     }
   }
 
@@ -104,13 +112,7 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
           <DialogTitle className={isEditing ? 'sr-only' : 'text-2xl font-serif'}>
             {item?.processed_title || 'Loading Item...'}
           </DialogTitle>
-          {isEditing && (
-            <Input 
-              value={title} 
-              onChange={(e) => setTitle(e.target.value)} 
-              className="text-2xl font-serif h-auto p-0 border-0 shadow-none focus-visible:ring-0" 
-            />
-          )}
+          {isEditing && <Input value={title} onChange={(e) => setTitle(e.target.value)} className="text-2xl font-serif h-auto p-0 border-0 shadow-none focus-visible:ring-0" />}
            <DialogDescription>
             {item ? new Date(item.created_at).toLocaleString() : 'Please wait'}
           </DialogDescription>
@@ -125,11 +127,7 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
               <div className="space-y-2">
                 <Label className="font-semibold text-base">Summary</Label>
                 {isEditing ? (
-                  <Textarea 
-                    value={summary} 
-                    onChange={(e) => setSummary(e.target.value)} 
-                    className="min-h-[150px] bg-slate-50" 
-                  />
+                  <Textarea value={summary} onChange={(e) => setSummary(e.target.value)} className="min-h-[150px] bg-slate-50" />
                 ) : (
                   <p className="text-sm text-slate-700 leading-relaxed">{item.processed_summary}</p>
                 )}
@@ -137,12 +135,7 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
               <div className="space-y-2">
                 <Label className="font-semibold text-base">Tags</Label>
                 {isEditing ? (
-                  <Input 
-                    value={tags} 
-                    onChange={(e) => setTags(e.target.value)} 
-                    placeholder="e.g., ai, tech, news"
-                    className="bg-slate-50"
-                  />
+                  <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="e.g., ai, tech, news" className="bg-slate-50" />
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     {item.processed_tags?.map(tag => (
@@ -159,18 +152,22 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
                     Visit Link <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
+                {item.content_type === 'image' && item.storage_path && (
+                  <Button variant="outline" size="sm" onClick={handleDownload} className="mt-2">
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Image
+                  </Button>
+                )}
               </div>
             </div>
             <DialogFooter className="pt-4 border-t">
               {isEditing ? (
                 <Button onClick={handleSaveChanges} disabled={isLoading}>
-                  {isLoading ? <LoaderCircle className="animate-spin mr-2" /> : <Save className="mr-2 h-4 w-4" />}
-                  Save Changes
+                  <Save className="mr-2 h-4 w-4" /> Save Changes
                 </Button>
               ) : (
                 <Button variant="secondary" onClick={() => setIsEditing(true)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
+                  <Edit className="mr-2 h-4 w-4" /> Edit
                 </Button>
               )}
             </DialogFooter>

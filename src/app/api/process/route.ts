@@ -39,17 +39,31 @@ export async function POST(req: NextRequest) {
     let originalContent: string | null = null;
     let textToAnalyze: string = "";
     let contentForAI: string | (string | { inlineData: { mimeType: string; data: string; } })[];
+    let storagePath: string | null = null;
 
     if (contentType === 'image') {
       const file = formData.get('file') as File;
       if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+      
+      const filePath = `${user.id}/${Date.now()}-${file.name}`;
+      // THE FIX: Changed 'vault_images' to 'vault.images'
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('vault.images')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw new Error(`Storage Error: ${uploadError.message}`);
+      }
+      storagePath = uploadData.path;
+
       const buffer = Buffer.from(await file.arrayBuffer());
       const base64Data = buffer.toString('base64');
       contentForAI = [
-        "Analyze this image. Extract any text, describe the content, and identify key information. Provide a title, a concise summary, relevant tags, and any named entities (dates, people, organizations).",
+        "Analyze this image...",
         { inlineData: { mimeType: file.type, data: base64Data } }
       ];
-      originalContent = `Image Upload: ${file.name}`;
+      originalContent = file.name;
+
     } else {
         if (contentType === 'link') {
             const url = formData.get('content') as string;
@@ -64,15 +78,14 @@ export async function POST(req: NextRequest) {
                 bodyText = bodyText.replace(/\s\s+/g, ' ').trim();
                 textToAnalyze = bodyText.substring(0, 8000);
             } catch (scrapeError: unknown) {
-                console.error("Scraping error:", scrapeError);
-                textToAnalyze = `The provided URL could not be scraped. Please analyze the URL itself: ${originalContent}`;
+                textToAnalyze = `The provided URL could not be scraped. Analyze the URL itself: ${originalContent}`;
             }
         } else { // 'note'
             const note = formData.get('content') as string;
             originalContent = note;
             textToAnalyze = note;
         }
-        contentForAI = `Analyze the following content: "${textToAnalyze}". Provide a title, a concise summary, relevant tags, and any named entities (dates, people, organizations).`;
+        contentForAI = `Analyze the following content: "${textToAnalyze}". Provide a title, a concise summary, relevant tags, and any named entities.`;
     }
 
     const model = genAI.getGenerativeModel({ 
@@ -81,9 +94,7 @@ export async function POST(req: NextRequest) {
     });
     
     const result = await model.generateContent(contentForAI);
-    const response = result.response;
-    const aiResponseText = response.text();
-    const aiJson = JSON.parse(aiResponseText);
+    const aiJson = JSON.parse(result.response.text());
     
     const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
     const embeddingResult = await embeddingModel.embedContent(aiJson.summary);
@@ -95,6 +106,7 @@ export async function POST(req: NextRequest) {
         user_id: user.id,
         content_type: contentType,
         original_content: originalContent,
+        storage_path: storagePath,
         processed_title: aiJson.title,
         processed_summary: aiJson.summary,
         processed_tags: aiJson.tags,
@@ -109,9 +121,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ message: 'Success', newItem });
-  // THE FIX: Explicitly type the error object
   } catch (error: unknown) {
-    console.error("Error in /api/process:", error);
     if (error instanceof Error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

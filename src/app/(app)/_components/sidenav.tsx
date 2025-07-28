@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { SheetClose } from '@/components/ui/sheet'
+// THE FIX: Corrected the import path from 'components-ui' to 'components/ui'
+import { SheetClose } from '@/components/ui/sheet' 
 import { LayoutDashboard, StickyNote, Link2, Image, Folder, PlusCircle, LogOut, User } from 'lucide-react'
 import { NewCollectionDialog } from './new-collection-dialog'
 
@@ -43,15 +44,12 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
     { href: '/profile', label: 'Profile', icon: User },
   ]
   
-  // Conditionally wrap a component in SheetClose only if we are in a sheet.
-  // Otherwise, use a Fragment, which does nothing.
   const LinkWrapper = isSheet ? SheetClose : Fragment;
 
   return (
     <>
       <div className="flex h-full max-h-screen flex-col gap-2 bg-background">
         <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-          {/* THE FIX: Wrap the main logo link */}
           <LinkWrapper asChild>
             <Link href="/vault" className="flex items-center gap-2 font-serif text-lg font-bold">
               LinkVault AI
@@ -61,7 +59,6 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
         <div className="flex-1 overflow-y-auto">
           <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
             {mainNavItems.map((item) => (
-              // THE FIX: Wrap each main navigation link
               <LinkWrapper asChild key={item.href}>
                 <NavLink href={item.href}>
                   <item.icon className="h-4 w-4" />
@@ -80,7 +77,6 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
               </div>
               <nav className="grid items-start text-sm font-medium">
                   {collections.map((collection) => (
-                    // THE FIX: Wrap each collection link
                     <LinkWrapper asChild key={collection.id}>
                       <NavLink href={`/collections/${collection.id}`}>
                           <Folder className="h-4 w-4" />
@@ -93,15 +89,12 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
         </div>
         <div className="mt-auto p-4 border-t">
           <div className="flex items-center justify-between">
-            {/* THE FIX: Wrap the profile link at the bottom */}
-            <LinkWrapper asChild>
-                <Link href="/profile" className="flex-grow hover:bg-slate-50 p-2 rounded-md -m-2">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Signed in as</p>
-                    <p className="text-sm font-semibold truncate">{userEmail}</p>
-                  </div>
-                </Link>
-            </LinkWrapper>
+            <Link href="/profile" className="flex-grow hover:bg-slate-50 p-2 rounded-md -m-2">
+              <div>
+                <p className="text-xs text-muted-foreground">Signed in as</p>
+                <p className="text-sm font-semibold truncate">{userEmail}</p>
+              </div>
+            </Link>
             <form action="/api/auth/signout" method="post" className="ml-2">
               <Button type="submit" variant="ghost" size="icon">
                 <LogOut className="h-5 w-5 text-muted-foreground hover:text-primary" />
