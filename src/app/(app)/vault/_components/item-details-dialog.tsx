@@ -50,8 +50,13 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
           setTitle(data.processed_title || '')
           setSummary(data.processed_summary || '')
           setTags((data.processed_tags || []).join(', '))
-        } catch (err: any) {
-          setError(err.message)
+        // THE FIX: Explicitly type the error object as 'unknown'
+        } catch (err: unknown) {
+          if (err instanceof Error) {
+            setError(err.message)
+          } else {
+            setError('An unexpected error occurred.')
+          }
         } finally {
           setIsLoading(false)
         }
@@ -80,8 +85,13 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
       const updatedItem = await response.json()
       onUpdate(updatedItem)
       setIsEditing(false)
-    } catch (err: any) {
-        setError(err.message)
+    // THE FIX: Explicitly type the error object as 'unknown'
+    } catch (err: unknown) {
+        if (err instanceof Error) {
+            setError(err.message)
+        } else {
+            setError('An unexpected error occurred.')
+        }
     } finally {
         setIsLoading(false)
     }
@@ -90,7 +100,6 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
   const handleDownload = async () => {
     if (!item || !item.storage_path) return;
     try {
-      // THE FIX: Changed 'vault_images' to 'vault.images'
       const { data, error } = await supabase.storage
         .from('vault.images')
         .createSignedUrl(item.storage_path, 60)
