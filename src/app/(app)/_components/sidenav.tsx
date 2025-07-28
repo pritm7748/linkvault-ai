@@ -11,11 +11,10 @@ import { NewCollectionDialog } from './new-collection-dialog'
 
 type Collection = { id: number; name: string };
 
-// THE FIX: The 'isSheet' prop is correctly defined here.
 type SideNavProps = {
   userEmail: string;
   collections: Collection[];
-  isSheet: boolean; 
+  isSheet: boolean;
 };
 
 // A reusable component for our navigation links
@@ -46,7 +45,7 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
   ]
   
   // Conditionally wrap a component in SheetClose only if we are in a sheet.
-  // Otherwise, use a Fragment, which does nothing. This is the key to fixing the crash.
+  // Otherwise, use a Fragment, which does nothing. This is the key to the fix.
   const LinkWrapper = isSheet ? SheetClose : Fragment;
 
   return (
@@ -62,6 +61,7 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
         <div className="flex-1 overflow-y-auto">
           <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
             {mainNavItems.map((item) => (
+              // THE FIX: Every link is now wrapped, ensuring the sheet closes on mobile.
               <LinkWrapper asChild key={item.href}>
                 <NavLink href={item.href}>
                   <item.icon className="h-4 w-4" />
@@ -92,14 +92,13 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
         </div>
         <div className="mt-auto p-4 border-t">
           <div className="flex items-center justify-between">
-            {/* THE FIX: The user info block is now a proper, clickable link */}
             <LinkWrapper asChild>
-                <Link href="/profile" className="flex-grow hover:bg-slate-50 p-2 rounded-md -m-2">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Signed in as</p>
-                    <p className="text-sm font-semibold truncate">{userEmail}</p>
-                  </div>
-                </Link>
+              <Link href="/profile" className="flex-grow hover:bg-slate-50 p-2 rounded-md -m-2">
+                <div>
+                  <p className="text-xs text-muted-foreground">Signed in as</p>
+                  <p className="text-sm font-semibold truncate">{userEmail}</p>
+                </div>
+              </Link>
             </LinkWrapper>
             <form action="/api/auth/signout" method="post" className="ml-2">
               <Button type="submit" variant="ghost" size="icon">
