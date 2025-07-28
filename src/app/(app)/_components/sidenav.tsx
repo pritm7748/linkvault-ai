@@ -5,17 +5,17 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-// THE FIX: Corrected the import path from 'components-ui' to 'components/ui'
-import { SheetClose } from '@/components/ui/sheet' 
+import { SheetClose } from '@/components/ui/sheet'
 import { LayoutDashboard, StickyNote, Link2, Image, Folder, PlusCircle, LogOut, User } from 'lucide-react'
 import { NewCollectionDialog } from './new-collection-dialog'
 
 type Collection = { id: number; name: string };
 
+// THE FIX: Add 'isSheet' to the type definition.
 type SideNavProps = {
   userEmail: string;
   collections: Collection[];
-  isSheet: boolean;
+  isSheet: boolean; 
 };
 
 const NavLink = ({ href, children }: { href: string, children: React.ReactNode }) => {
