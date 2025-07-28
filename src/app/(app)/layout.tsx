@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { SideNav } from './_components/sidenav'
 import { SearchBar } from './_components/search-bar'
-import { Menu } from 'lucide-react'
+import { Menu, LogOut } from 'lucide-react'
 
 export default async function AppLayout({
   children,
@@ -15,7 +15,6 @@ export default async function AppLayout({
   
   const [
     { data: { session } },
-    // THE FIX: The select query now correctly asks for both 'id' and 'name' in a single string.
     { data: collections }
   ] = await Promise.all([
     supabase.auth.getSession(),
@@ -26,6 +25,7 @@ export default async function AppLayout({
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       {/* --- Desktop Sidebar --- */}
       <div className="hidden border-r bg-background md:block">
+        {/* We explicitly tell the sidebar it is NOT in a mobile sheet */}
         <SideNav 
           userEmail={session?.user.email || 'No user'} 
           collections={collections || []} 
@@ -48,6 +48,7 @@ export default async function AppLayout({
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col p-0">
+              {/* We explicitly tell the sidebar it IS in a mobile sheet */}
               <SideNav 
                 userEmail={session?.user.email || 'No user'} 
                 collections={collections || []} 
@@ -59,11 +60,14 @@ export default async function AppLayout({
           <div className="w-full flex-1">
             <SearchBar />
           </div>
-          <form action="/api/auth/signout" method="post" className="ml-4">
-            <Button type="submit" variant="outline">Sign Out</Button>
+          <form action="/api/auth/signout" method="post" className="ml-2">
+            <Button type="submit" variant="ghost" size="icon">
+                <LogOut className="h-5 w-5 text-muted-foreground" />
+                <span className="sr-only">Sign Out</span>
+            </Button>
           </form>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 bg-muted/40">
+        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 bg-muted/40 overflow-y-auto">
           {children}
         </main>
       </div>
