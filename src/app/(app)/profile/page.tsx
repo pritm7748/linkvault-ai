@@ -2,9 +2,11 @@ import { createServer } from '@/lib/supabase/server'
 import { UpdatePasswordForm } from './_components/update-password-form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { cookies } from 'next/headers' // --- ADD THIS IMPORT ---
 
 export default async function ProfilePage() {
-  const supabase = await createServer()
+  const cookieStore = cookies() // --- ADD THIS LINE ---
+  const supabase = createServer(cookieStore) // --- PASS cookieStore HERE & REMOVE AWAIT ---
   const { data: { user } } = await supabase.auth.getUser()
 
   
@@ -26,7 +28,7 @@ export default async function ProfilePage() {
               <span className="text-slate-500">Email:</span>
               <span className="font-medium">{user?.email}</span>
             </div>
-             <div className="flex justify-between">
+              <div className="flex justify-between">
               <span className="text-slate-500">Sign-in Method:</span>
               <span className="font-medium capitalize">{user?.app_metadata.provider || 'Email'}</span>
             </div>
@@ -52,7 +54,7 @@ export default async function ProfilePage() {
         {/* Danger Zone for Account Deletion */}
         <div className="md:col-span-2">
             <Card className="border-red-500/50 bg-red-50">
-                 <CardHeader>
+                <CardHeader>
                     <CardTitle className="text-red-800">Danger Zone</CardTitle>
                     <CardDescription className="text-red-700">These actions are irreversible. Please proceed with caution.</CardDescription>
                 </CardHeader>
