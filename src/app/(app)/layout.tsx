@@ -1,19 +1,20 @@
 // src/app/(app)/layout.tsx
 
-import Link from 'next/link'
 import { createServer } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { SideNav } from './_components/sidenav'
 import { SearchBar } from './_components/search-bar'
-import { Menu, LogOut } from 'lucide-react'
+import { Menu } from 'lucide-react'
+import { cookies } from 'next/headers' // --- ADD THIS IMPORT ---
 
 export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createServer()
+  const cookieStore = cookies() // --- ADD THIS LINE ---
+  const supabase = createServer(cookieStore) // --- PASS cookieStore HERE ---
   
   const [
     { data: { session } },
@@ -34,7 +35,6 @@ export default async function AppLayout({
         />
       </div>
       
-      {/* --- THE FIX: Added `max-h-screen` to constrain the height of this column --- */}
       <div className="flex flex-col max-h-screen">
         <header className="flex h-14 shrink-0 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
           {/* --- Mobile Sheet (Hamburger Menu) --- */}
