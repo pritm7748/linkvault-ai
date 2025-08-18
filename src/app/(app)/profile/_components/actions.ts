@@ -2,10 +2,12 @@
 
 import { createServer } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { cookies } from 'next/headers' // --- ADD THIS IMPORT ---
 
 
 export async function updatePassword(formData: FormData) {
-  const supabase = await createServer()
+  const cookieStore = cookies() // --- ADD THIS LINE ---
+  const supabase = createServer(cookieStore) // --- PASS cookieStore HERE & REMOVE AWAIT ---
 
   const password = formData.get('password') as string
   const confirmPassword = formData.get('confirmPassword') as string
