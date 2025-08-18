@@ -1,19 +1,26 @@
 import { createServer } from '@/lib/supabase/server'
 import { VaultGrid } from './_components/vault-grid'
-import { cookies } from 'next/headers' // --- ADD THIS IMPORT ---
+import { cookies } from 'next/headers'
 
 export default async function VaultPage() {
-  const cookieStore = cookies() // --- ADD THIS LINE ---
-  const supabase = createServer(cookieStore) // --- PASS cookieStore HERE ---
+  const cookieStore = cookies()
+  const supabase = createServer(cookieStore)
   
   // Fetch both items and collections
   const [
     { data: items },
     { data: collections }
   ] = await Promise.all([
-    // --- ADDED is_favorited to the select query ---
-    supabase.from('vault_items').select('id, processed_title, processed_summary, processed_tags, is_favorited').order('created_at', { ascending: false }),
-    supabase.from('collections').select('id, name').order('name')
+    supabase
+      .from('vault_items')
+      .select('id, processed_title, processed_summary, processed_tags, is_favorited')
+      // --- THE FIX: Sort by favorites first, then by creation date ---
+      .order('is_favorited', { ascending: false })
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('collections')
+      .select('id, name')
+      .order('name')
   ]);
 
   return (

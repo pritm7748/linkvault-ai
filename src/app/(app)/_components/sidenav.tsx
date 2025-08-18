@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { SheetClose } from '@/components/ui/sheet'
-// Import the 'Star' icon
 import { LayoutDashboard, StickyNote, Link2, Image, Folder, PlusCircle, LogOut, User, Video, Star } from 'lucide-react' 
 import { NewCollectionDialog } from './new-collection-dialog'
 
@@ -39,8 +38,7 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
 
   const mainNavItems = [
     { href: '/vault', label: 'All Items', icon: LayoutDashboard },
-    // --- NEW FAVORITES LINK ADDED ---
-    { href: '/vault/favorites', label: 'Favorites', icon: Star },
+    // --- REMOVED FAVORITES FROM HERE ---
     { href: '/add/note', label: 'Add Note', icon: StickyNote },
     { href: '/add/link', label: 'Add Link', icon: Link2 },
     { href: '/add/image', label: 'Add Image', icon: Image },
@@ -82,6 +80,14 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
                   </Button>
               </div>
               <nav className="grid items-start text-sm font-medium">
+                  {/* --- ADDED FAVORITES LINK HERE --- */}
+                  <LinkWrapper asChild>
+                    <NavLink href="/vault/favorites">
+                      <Star className="h-4 w-4" />
+                      Favorites
+                    </NavLink>
+                  </LinkWrapper>
+
                   {collections.map((collection) => (
                     <LinkWrapper asChild key={collection.id}>
                       <NavLink href={`/collections/${collection.id}`}>
