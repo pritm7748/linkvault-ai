@@ -75,16 +75,14 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
 
   // --- NEW: Function to toggle an item's favorite status ---
   const handleToggleFavorite = async (e: React.MouseEvent, itemToToggle: VaultItem) => {
-    e.stopPropagation(); // Prevents the details dialog from opening
+    e.stopPropagation(); 
     
-    // Optimistic UI update for a snappy feel
     const originalItems = items;
     const newItems = items.map(item => 
       item.id === itemToToggle.id ? { ...item, is_favorited: !item.is_favorited } : item
     );
     setItems(newItems);
 
-    // Call the backend to persist the change
     try {
       const response = await fetch(`/api/vault/${itemToToggle.id}`, {
         method: 'PATCH',
@@ -94,9 +92,11 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
       if (!response.ok) {
         throw new Error('Failed to update favorite status');
       }
+      // Add this line to use the router and refresh server data
+      router.refresh(); 
     } catch (error) {
       console.error(error);
-      setItems(originalItems); // Revert UI change on error
+      setItems(originalItems); 
     }
   };
 
