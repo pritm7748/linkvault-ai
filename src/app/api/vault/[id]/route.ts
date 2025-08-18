@@ -39,9 +39,7 @@ export async function PUT(req: NextRequest, { params }) {
 
   const { id } = params
   const body = await req.json()
-
-  // THE FIX: We provide a more specific type for the updateData object,
-  // replacing the generic 'any' with a union of possible types.
+  
   const updateData: { [key: string]: string | string[] | number | null } = {}
 
   if ('title' in body) updateData.processed_title = body.title;
@@ -67,4 +65,45 @@ export async function PUT(req: NextRequest, { params }) {
   }
 
   return NextResponse.json(updatedItem)
+}
+
+
+// --- NEW FUNCTION ADDED FOR FAVORITES ---
+// @ts-expect-error - The params object is correctly passed by Next.js
+export async function PATCH(req: NextRequest, { params }) {
+  const supabase = await createServer()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const itemId = parseInt(params.id, 10)
+  if (isNaN(itemId)) {
+    return NextResponse.json({ error: 'Invalid item ID' }, { status: 400 })
+  }
+
+  try {
+    const { is_favorited } = await req.json()
+
+    if (typeof is_favorited !== 'boolean') {
+      return NextResponse.json({ error: 'Invalid is_favorited value provided' }, { status: 400 })
+    }
+
+    const { data: updatedItem, error } = await supabase
+      .from('vault_items')
+      .update({ is_favorited: is_favorited })
+      .eq('id', itemId)
+      .eq('user_id', user.id)
+      .select('id, is_favorited') // Only select the fields that changed for efficiency
+      .single()
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    return NextResponse.json(updatedItem)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.'
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
+  }
 }

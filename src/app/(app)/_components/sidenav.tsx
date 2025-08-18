@@ -6,8 +6,8 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { SheetClose } from '@/components/ui/sheet'
-// Import the 'Video' icon
-import { LayoutDashboard, StickyNote, Link2, Image, Folder, PlusCircle, LogOut, User, Video } from 'lucide-react' 
+// Import the 'Star' icon
+import { LayoutDashboard, StickyNote, Link2, Image, Folder, PlusCircle, LogOut, User, Video, Star } from 'lucide-react' 
 import { NewCollectionDialog } from './new-collection-dialog'
 
 type Collection = { id: number; name: string };
@@ -39,10 +39,11 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
 
   const mainNavItems = [
     { href: '/vault', label: 'All Items', icon: LayoutDashboard },
+    // --- NEW FAVORITES LINK ADDED ---
+    { href: '/vault/favorites', label: 'Favorites', icon: Star },
     { href: '/add/note', label: 'Add Note', icon: StickyNote },
     { href: '/add/link', label: 'Add Link', icon: Link2 },
     { href: '/add/image', label: 'Add Image', icon: Image },
-    // Add the new "Add Video" link
     { href: '/add/video', label: 'Add Video', icon: Video }, 
     { href: '/profile', label: 'Profile', icon: User },
   ]

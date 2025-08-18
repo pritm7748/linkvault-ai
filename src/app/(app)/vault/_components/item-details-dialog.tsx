@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { LoaderCircle, ExternalLink, Edit, Save, Download } from 'lucide-react'
 
+// --- UPDATED THIS TYPE ---
 type VaultItemFull = {
   id: number;
   created_at: string;
@@ -18,6 +19,7 @@ type VaultItemFull = {
   processed_summary: string | null;
   processed_tags: string[] | null;
   storage_path: string | null;
+  is_favorited: boolean; // Add the new field
 };
 
 type ItemDetailsDialogProps = {
@@ -155,7 +157,6 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
                 <Label className="font-semibold text-base">Original Content</Label>
                 <p className="text-sm text-slate-500 break-words">{item.original_content}</p>
                 
-                {/* --- THE FIX: Updated this condition to include videos --- */}
                 {(item.content_type === 'link' || item.content_type === 'video') && (
                   <a href={item.original_content || '#'} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm inline-flex items-center gap-1 mt-1">
                     Visit Link <ExternalLink className="h-3 w-3" />
