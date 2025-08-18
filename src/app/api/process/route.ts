@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServer } from '@/lib/supabase/server'
 import { GoogleGenerativeAI, Part, Schema, SchemaType } from '@google/generative-ai'
 import * as cheerio from 'cheerio';
+import { cookies } from 'next/headers'; // --- ADD THIS IMPORT ---
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -46,7 +47,8 @@ async function getYouTubeVideoDetails(videoId: string): Promise<{ title: string;
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = await createServer();
+  const cookieStore = cookies(); // --- ADD THIS LINE ---
+  const supabase = createServer(cookieStore); // --- PASS cookieStore HERE & REMOVE AWAIT ---
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

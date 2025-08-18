@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServer } from '@/lib/supabase/server'
+import { cookies } from 'next/headers' // --- ADD THIS IMPORT ---
 
 // @ts-expect-error - The params object is correctly passed by Next.js
 export async function GET(req: NextRequest, { params }) {
-  const supabase = await createServer()
+  const cookieStore = cookies() // --- ADD THIS LINE ---
+  const supabase = createServer(cookieStore) // --- PASS cookieStore HERE & REMOVE AWAIT ---
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -31,7 +33,8 @@ export async function GET(req: NextRequest, { params }) {
 
 // @ts-expect-error - The params object is correctly passed by Next.js
 export async function PUT(req: NextRequest, { params }) {
-  const supabase = await createServer()
+  const cookieStore = cookies() // --- ADD THIS LINE ---
+  const supabase = createServer(cookieStore) // --- PASS cookieStore HERE & REMOVE AWAIT ---
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -67,11 +70,10 @@ export async function PUT(req: NextRequest, { params }) {
   return NextResponse.json(updatedItem)
 }
 
-
-// --- NEW FUNCTION ADDED FOR FAVORITES ---
 // @ts-expect-error - The params object is correctly passed by Next.js
 export async function PATCH(req: NextRequest, { params }) {
-  const supabase = await createServer()
+  const cookieStore = cookies() // --- ADD THIS LINE ---
+  const supabase = createServer(cookieStore) // --- PASS cookieStore HERE & REMOVE AWAIT ---
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -94,7 +96,7 @@ export async function PATCH(req: NextRequest, { params }) {
       .update({ is_favorited: is_favorited })
       .eq('id', itemId)
       .eq('user_id', user.id)
-      .select('id, is_favorited') // Only select the fields that changed for efficiency
+      .select('id, is_favorited')
       .single()
 
     if (error) {

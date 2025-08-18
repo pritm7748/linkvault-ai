@@ -1,8 +1,10 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServer } from '@/lib/supabase/server'
+import { cookies } from 'next/headers' // --- ADD THIS IMPORT ---
 
 export async function POST(req: NextRequest) {
-  const supabase = await createServer()
+  const cookieStore = cookies() // --- ADD THIS LINE ---
+  const supabase = createServer(cookieStore) // --- PASS cookieStore HERE & REMOVE AWAIT ---
 
   // This function invalidates the user's session and removes the auth cookie.
   await supabase.auth.signOut()

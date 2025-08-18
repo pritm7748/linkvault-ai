@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServer } from '@/lib/supabase/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { cookies } from 'next/headers' // --- ADD THIS IMPORT ---
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createServer()
+    const cookieStore = cookies() // --- ADD THIS LINE ---
+    const supabase = createServer(cookieStore) // --- PASS cookieStore HERE & REMOVE AWAIT ---
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -25,6 +27,8 @@ export async function POST(req: NextRequest) {
       query_embedding: queryEmbedding,
       match_threshold: 0.7,
       match_count: 20,
+      // Pass the user_id to the RPC function for filtering
+      p_user_id: user.id
     })
 
     if (error) {
@@ -38,7 +42,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(filteredItems)
 
-  // THE FIX: Explicitly type the error object
   } catch (error: unknown) {
     console.error("Error in /api/search:", error)
     if (error instanceof Error) {
