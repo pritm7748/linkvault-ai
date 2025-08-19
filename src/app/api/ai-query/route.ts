@@ -1,0 +1,78 @@
+// src/app/api/ai-query/route.ts
+
+import { NextRequest, NextResponse } from 'next/server'
+import { createServer } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
+import { GoogleGenerativeAI } from '@google/generative-ai'
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+
+export async function POST(req: NextRequest) {
+  try {
+    const cookieStore = cookies()
+    const supabase = createServer(cookieStore)
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { query } = await req.json()
+    if (!query) {
+      return NextResponse.json({ error: 'Query is required' }, { status: 400 })
+    }
+
+    // 1. Create an embedding from the user's question
+    const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
+    const embeddingResult = await embeddingModel.embedContent(query);
+    const queryEmbedding = embeddingResult.embedding.values;
+
+    // 2. Perform a semantic search to find relevant documents
+    const { data: items, error: rpcError } = await supabase.rpc('match_vault_items', {
+      query_embedding: queryEmbedding,
+      match_threshold: 0.75, // Higher threshold for more relevant results
+      match_count: 5,       // Get top 5 results
+      p_user_id: user.id
+    })
+
+    if (rpcError) {
+      throw new Error(`Database RPC error: ${rpcError.message}`)
+    }
+
+    if (!items || items.length === 0) {
+        return NextResponse.json({ answer: "I couldn't find any relevant information in your vault to answer that question." })
+    }
+
+    // 3. Synthesize an answer using the retrieved documents as context
+    const context = items.map((item: { processed_title: any; processed_summary: any; }) => `Title: ${item.processed_title}\nSummary: ${item.processed_summary}`).join('\n\n---\n\n');
+    
+    const prompt = `
+      You are a helpful AI assistant for a service called LinkVault. A user has asked a question about the content they've saved in their vault.
+      
+      Based ONLY on the following document summaries provided as context, provide a concise and direct answer to the user's question.
+      Do not use any outside knowledge. If the answer cannot be found in the provided context, state that clearly.
+
+      CONTEXT:
+      ---
+      ${context}
+      ---
+      
+      USER'S QUESTION:
+      ${query}
+    `;
+
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    const answer = response.text();
+
+    return NextResponse.json({ answer });
+
+  } catch (error: unknown) {
+    console.error("Error in /api/ai-query:", error)
+    if (error instanceof Error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+  }
+}
