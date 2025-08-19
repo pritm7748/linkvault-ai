@@ -7,10 +7,14 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
+// --- UPDATED: Add all fields needed to display a source card ---
 type MatchedItem = {
   id: number;
   processed_title: string;
   processed_summary: string;
+  content_type: string;
+  is_favorited: boolean;
+  // Add any other fields your RPC function returns that you want to display
 };
 
 export async function POST(req: NextRequest) {
@@ -34,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     const { data: items, error: rpcError } = await supabase.rpc('match_vault_items', {
       query_embedding: queryEmbedding,
-      match_threshold: 0.75,
+      match_threshold: 0.5, // Using the lower threshold we set
       match_count: 5,
       p_user_id: user.id
     })
@@ -46,7 +50,11 @@ export async function POST(req: NextRequest) {
     const typedItems = items as MatchedItem[];
 
     if (!typedItems || typedItems.length === 0) {
-        return NextResponse.json({ answer: "I couldn't find any relevant information in your vault to answer that question." })
+        // --- UPDATED: Return an empty sources array ---
+        return NextResponse.json({ 
+          answer: "I couldn't find any relevant information in your vault to answer that question.",
+          sources: [] 
+        })
     }
 
     const context = typedItems.map(item => `Title: ${item.processed_title}\nSummary: ${item.processed_summary}`).join('\n\n---\n\n');
@@ -66,20 +74,20 @@ export async function POST(req: NextRequest) {
       ${query}
     `;
 
-    // --- THE FIX: Switched from 'gemini-1.5-pro-latest' to the more efficient 'gemini-1.5-flash' ---
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const result = await model.generateContent(prompt);
     const response = result.response;
     const answer = response.text();
 
-    return NextResponse.json({ answer });
+    // --- UPDATED: Return the answer AND the source items ---
+    return NextResponse.json({ answer, sources: typedItems });
 
   } catch (error: unknown) {
     console.error("Error in /api/ai-query:", error)
-    // Check for specific quota failure error from Google
     if (error instanceof Error && error.message.includes('429')) {
         return NextResponse.json({ 
-            answer: "The AI is currently busy due to high demand on the free plan. Please try again in a minute." 
+            answer: "The AI is currently busy due to high demand on the free plan. Please try again in a minute.",
+            sources: []
         });
     }
     if (error instanceof Error) {
