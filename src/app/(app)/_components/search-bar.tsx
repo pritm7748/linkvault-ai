@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from '@/components/ui/button'
 import { Search, Wand2 } from 'lucide-react'
 import { QandADialog } from './q-and-a-dialog'
+// --- ADDED: Import the main details dialog ---
+import { ItemDetailsDialog } from '../vault/_components/item-details-dialog'
 
-// --- ADD Source TYPE ---
 type Source = {
   id: number;
   processed_title: string;
@@ -25,8 +26,11 @@ export function SearchBar() {
   const [isQnOpen, setIsQnOpen] = useState(false)
   const [answer, setAnswer] = useState<string | null>(null)
   const [isLoadingAnswer, setIsLoadingAnswer] = useState(false)
-  // --- ADD NEW STATE for sources ---
   const [sources, setSources] = useState<Source[]>([])
+  
+  // --- ADDED: State for the main ItemDetailsDialog ---
+  const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -47,7 +51,7 @@ export function SearchBar() {
     setIsQnOpen(true)
     setIsLoadingAnswer(true)
     setAnswer(null)
-    setSources([]) // --- RESET sources on new query ---
+    setSources([])
 
     try {
       const response = await fetch('/api/ai-query', {
@@ -61,7 +65,7 @@ export function SearchBar() {
         throw new Error(result.error || 'The AI failed to respond.');
       }
       setAnswer(result.answer);
-      setSources(result.sources || []); // --- SET sources from API response ---
+      setSources(result.sources || []);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
       setAnswer(`Sorry, an error occurred: ${errorMessage}`);
@@ -70,6 +74,14 @@ export function SearchBar() {
     }
   };
 
+  // --- ADDED: Handler for clicking a source item ---
+  const handleSourceClick = (itemId: number) => {
+    // Close the Q&A dialog
+    setIsQnOpen(false);
+    // Open the main details dialog with the selected item
+    setSelectedItemId(itemId);
+    setIsDetailsOpen(true);
+  };
 
   return (
     <>
@@ -111,7 +123,17 @@ export function SearchBar() {
         query={query}
         answer={answer}
         isLoading={isLoadingAnswer}
-        sources={sources} // --- PASS sources prop ---
+        sources={sources}
+        // --- ADDED: Pass the handler to the dialog ---
+        onSourceClick={handleSourceClick}
+      />
+      
+      {/* --- ADDED: The main ItemDetailsDialog to be controlled by this component --- */}
+      <ItemDetailsDialog 
+        itemId={selectedItemId}
+        isOpen={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+        onUpdate={() => router.refresh()} // Refresh data on update
       />
     </>
   )
