@@ -7,6 +7,14 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
+// --- NEW: Define the type for items returned by our database function ---
+type MatchedItem = {
+  id: number;
+  processed_title: string;
+  processed_summary: string;
+  // Add any other fields your RPC function returns
+};
+
 export async function POST(req: NextRequest) {
   try {
     const cookieStore = cookies()
@@ -22,16 +30,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 })
     }
 
-    // 1. Create an embedding from the user's question
     const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
     const embeddingResult = await embeddingModel.embedContent(query);
     const queryEmbedding = embeddingResult.embedding.values;
 
-    // 2. Perform a semantic search to find relevant documents
     const { data: items, error: rpcError } = await supabase.rpc('match_vault_items', {
       query_embedding: queryEmbedding,
-      match_threshold: 0.75, // Higher threshold for more relevant results
-      match_count: 5,       // Get top 5 results
+      match_threshold: 0.75,
+      match_count: 5,
       p_user_id: user.id
     })
 
@@ -39,12 +45,14 @@ export async function POST(req: NextRequest) {
       throw new Error(`Database RPC error: ${rpcError.message}`)
     }
 
-    if (!items || items.length === 0) {
+    // --- FIX: Apply our new type to the returned items ---
+    const typedItems = items as MatchedItem[];
+
+    if (!typedItems || typedItems.length === 0) {
         return NextResponse.json({ answer: "I couldn't find any relevant information in your vault to answer that question." })
     }
 
-    // 3. Synthesize an answer using the retrieved documents as context
-    const context = items.map((item: { processed_title: any; processed_summary: any; }) => `Title: ${item.processed_title}\nSummary: ${item.processed_summary}`).join('\n\n---\n\n');
+    const context = typedItems.map(item => `Title: ${item.processed_title}\nSummary: ${item.processed_summary}`).join('\n\n---\n\n');
     
     const prompt = `
       You are a helpful AI assistant for a service called LinkVault. A user has asked a question about the content they've saved in their vault.
