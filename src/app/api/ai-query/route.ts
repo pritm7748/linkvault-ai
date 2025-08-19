@@ -7,12 +7,10 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-// --- NEW: Define the type for items returned by our database function ---
 type MatchedItem = {
   id: number;
   processed_title: string;
   processed_summary: string;
-  // Add any other fields your RPC function returns
 };
 
 export async function POST(req: NextRequest) {
@@ -44,8 +42,7 @@ export async function POST(req: NextRequest) {
     if (rpcError) {
       throw new Error(`Database RPC error: ${rpcError.message}`)
     }
-
-    // --- FIX: Apply our new type to the returned items ---
+    
     const typedItems = items as MatchedItem[];
 
     if (!typedItems || typedItems.length === 0) {
@@ -69,7 +66,8 @@ export async function POST(req: NextRequest) {
       ${query}
     `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+    // --- THE FIX: Switched from 'gemini-1.5-pro-latest' to the more efficient 'gemini-1.5-flash' ---
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const result = await model.generateContent(prompt);
     const response = result.response;
     const answer = response.text();
@@ -78,6 +76,12 @@ export async function POST(req: NextRequest) {
 
   } catch (error: unknown) {
     console.error("Error in /api/ai-query:", error)
+    // Check for specific quota failure error from Google
+    if (error instanceof Error && error.message.includes('429')) {
+        return NextResponse.json({ 
+            answer: "The AI is currently busy due to high demand on the free plan. Please try again in a minute." 
+        });
+    }
     if (error instanceof Error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
