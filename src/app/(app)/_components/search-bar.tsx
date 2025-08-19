@@ -4,9 +4,16 @@ import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Button } from '@/components/ui/button' // --- ADDED ---
-import { Search, Wand2 } from 'lucide-react' // --- ADDED Wand2 ---
-import { QandADialog } from './q-and-a-dialog' // --- ADDED ---
+import { Button } from '@/components/ui/button'
+import { Search, Wand2 } from 'lucide-react'
+import { QandADialog } from './q-and-a-dialog'
+
+// --- ADD Source TYPE ---
+type Source = {
+  id: number;
+  processed_title: string;
+  content_type: string;
+};
 
 export function SearchBar() {
   const router = useRouter()
@@ -15,14 +22,15 @@ export function SearchBar() {
   const [query, setQuery] = useState(searchParams.get('q') || '')
   const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || 'all')
 
-  // --- NEW STATE for Q&A Dialog ---
   const [isQnOpen, setIsQnOpen] = useState(false)
   const [answer, setAnswer] = useState<string | null>(null)
   const [isLoadingAnswer, setIsLoadingAnswer] = useState(false)
+  // --- ADD NEW STATE for sources ---
+  const [sources, setSources] = useState<Source[]>([])
 
   const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!query) return; // Don't search if query is empty
+    if (!query) return;
     
     const params = new URLSearchParams()
     params.set('q', query)
@@ -33,13 +41,13 @@ export function SearchBar() {
     router.push(`/search?${params.toString()}`)
   }
 
-  // --- NEW FUNCTION to handle AI Q&A ---
   const handleAskAI = async () => {
-    if (!query) return; // Don't ask if query is empty
+    if (!query) return;
     
     setIsQnOpen(true)
     setIsLoadingAnswer(true)
     setAnswer(null)
+    setSources([]) // --- RESET sources on new query ---
 
     try {
       const response = await fetch('/api/ai-query', {
@@ -53,6 +61,7 @@ export function SearchBar() {
         throw new Error(result.error || 'The AI failed to respond.');
       }
       setAnswer(result.answer);
+      setSources(result.sources || []); // --- SET sources from API response ---
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
       setAnswer(`Sorry, an error occurred: ${errorMessage}`);
@@ -86,24 +95,23 @@ export function SearchBar() {
             <SelectItem value="note">Notes</SelectItem>
             <SelectItem value="link">Links</SelectItem>
             <SelectItem value="image">Images</SelectItem>
-            <SelectItem value="video">Videos</SelectItem> {/* Added video filter */}
+            <SelectItem value="video">Videos</SelectItem>
           </SelectContent>
         </Select>
 
-        {/* --- NEW BUTTON for AI Q&A --- */}
         <Button onClick={handleAskAI} disabled={!query || isLoadingAnswer} className="bg-purple-600 hover:bg-purple-700">
           <Wand2 className="mr-2 h-4 w-4" />
           Ask
         </Button>
       </div>
 
-      {/* --- NEW DIALOG to display the answer --- */}
       <QandADialog 
         isOpen={isQnOpen}
         onOpenChange={setIsQnOpen}
         query={query}
         answer={answer}
         isLoading={isLoadingAnswer}
+        sources={sources} // --- PASS sources prop ---
       />
     </>
   )
