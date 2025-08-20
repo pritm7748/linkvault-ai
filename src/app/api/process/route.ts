@@ -2,9 +2,9 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServer } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 import { GoogleGenerativeAI, Part, Schema, SchemaType } from '@google/generative-ai'
 import * as cheerio from 'cheerio';
-import { cookies } from 'next/headers'; // --- ADD THIS IMPORT ---
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -21,11 +21,7 @@ const jsonSchema: Schema = {
   required: ["title", "summary", "tags"]
 };
 
-function getYouTubeVideoId(url: string): string | null {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-  const match = url.match(regExp);
-  return (match && match[2].length === 11) ? match[2] : null;
-}
+// ... (keep getYouTubeVideoId and getYouTubeVideoDetails functions as they are)
 
 async function getYouTubeVideoDetails(videoId: string): Promise<{ title: string; description: string }> {
   const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
@@ -41,14 +37,20 @@ async function getYouTubeVideoDetails(videoId: string): Promise<{ title: string;
     if (!snippet) return { title: 'Video Not Found', description: 'This video may be private or deleted.' };
     return { title: snippet.title, description: snippet.description };
   } catch (error) {
-    console.error('YouTube API call failed:', error);
     return { title: 'API Error', description: 'Could not fetch details from YouTube API.' };
   }
 }
 
+function getYouTubeVideoId(url: string): string | null {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+}
+
+
 export async function POST(req: NextRequest) {
-  const cookieStore = cookies(); // --- ADD THIS LINE ---
-  const supabase = createServer(cookieStore); // --- PASS cookieStore HERE & REMOVE AWAIT ---
+  const cookieStore = cookies();
+  const supabase = createServer(cookieStore);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -106,8 +108,11 @@ export async function POST(req: NextRequest) {
     const result = await model.generateContent(contentForAI);
     const aiJson = JSON.parse(result.response.text());
     
+    // --- THE FIX: Create a single text block for a richer embedding ---
+    const textForEmbedding = `Title: ${aiJson.title}\nSummary: ${aiJson.summary}\nTags: ${aiJson.tags.join(', ')}`;
+
     const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
-    const embeddingResult = await embeddingModel.embedContent(aiJson.summary);
+    const embeddingResult = await embeddingModel.embedContent(textForEmbedding);
     const embedding = embeddingResult.embedding.values;
 
     const { data: newItem, error: dbError } = await supabase.from('vault_items').insert({ user_id: user.id, content_type: contentType, original_content: originalContent, storage_path: storagePath, processed_title: aiJson.title, processed_summary: aiJson.summary, processed_tags: aiJson.tags, embedding: embedding }).select().single();
@@ -116,7 +121,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'Success', newItem });
 
   } catch (error: unknown) {
-    console.error("Error in /api/process:", error);
     if (error instanceof Error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
   }
