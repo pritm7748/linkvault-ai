@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServer } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 
-// THE FIX: Added the correct type for the 'params' object.
+// THE FIX: The first parameter must be the request object.
 export async function DELETE(
   req: NextRequest, 
   { params }: { params: { id: string } }
@@ -21,6 +21,7 @@ export async function DELETE(
   }
 
   try {
+    // First, un-link all items from this collection.
     const { error: updateError } = await supabase
       .from('vault_items')
       .update({ collection_id: null })
@@ -32,6 +33,7 @@ export async function DELETE(
       throw new Error('Could not update items in collection.')
     }
 
+    // Now, safely delete the collection itself.
     const { error: deleteError } = await supabase
       .from('collections')
       .delete()
