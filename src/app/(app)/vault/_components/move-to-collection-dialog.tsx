@@ -12,27 +12,31 @@ type MoveToCollectionDialogProps = {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   collections: Collection[];
-  itemId: number | null;
+  // --- UPDATED: Accept an array of item IDs ---
+  itemIds: number[]; 
   onItemMoved: (itemId: number, collectionId: number | null) => void;
 };
 
-export function MoveToCollectionDialog({ isOpen, onOpenChange, collections, itemId, onItemMoved }: MoveToCollectionDialogProps) {
+export function MoveToCollectionDialog({ isOpen, onOpenChange, collections, itemIds, onItemMoved }: MoveToCollectionDialogProps) {
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleMoveItem = async () => {
-    if (!itemId || selectedCollectionId === null) return;
+    if (itemIds.length === 0 || selectedCollectionId === null) return;
     setIsSubmitting(true)
     try {
-      await fetch(`/api/vault/${itemId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ collection_id: Number(selectedCollectionId) || null }),
-      })
-      onItemMoved(itemId, Number(selectedCollectionId) || null)
+      // --- UPDATED: Loop through all selected items and move them ---
+      for (const itemId of itemIds) {
+        await fetch(`/api/vault/${itemId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ collection_id: Number(selectedCollectionId) || null }),
+        });
+        onItemMoved(itemId, Number(selectedCollectionId) || null)
+      }
       onOpenChange(false) // Close dialog on success
     } catch (error) {
-      console.error("Failed to move item", error)
+      console.error("Failed to move item(s)", error)
     } finally {
       setIsSubmitting(false)
     }
@@ -42,8 +46,10 @@ export function MoveToCollectionDialog({ isOpen, onOpenChange, collections, item
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="bg-white">
         <DialogHeader>
-          <DialogTitle>Move Item to Collection</DialogTitle>
-          <DialogDescription>Select a collection to move this item into.</DialogDescription>
+          <DialogTitle>Move Item(s) to Collection</DialogTitle>
+          <DialogDescription>
+            Select a collection to move the selected {itemIds.length > 1 ? `${itemIds.length} items` : 'item'} into.
+          </DialogDescription>
         </DialogHeader>
         <div className="py-4">
           <Select onValueChange={setSelectedCollectionId}>
@@ -51,7 +57,6 @@ export function MoveToCollectionDialog({ isOpen, onOpenChange, collections, item
               <SelectValue placeholder="Select a collection..." />
             </SelectTrigger>
             <SelectContent>
-              {/* --- REMOVED "None" option --- */}
               {collections.map(collection => (
                 <SelectItem key={collection.id} value={String(collection.id)}>
                   {collection.name}
@@ -63,7 +68,7 @@ export function MoveToCollectionDialog({ isOpen, onOpenChange, collections, item
         <DialogFooter>
           <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
           <Button onClick={handleMoveItem} disabled={isSubmitting || !selectedCollectionId}>
-            {isSubmitting ? <LoaderCircle className="animate-spin" /> : 'Move Item'}
+            {isSubmitting ? <LoaderCircle className="animate-spin" /> : 'Move Item(s)'}
           </Button>
         </DialogFooter>
       </DialogContent>
