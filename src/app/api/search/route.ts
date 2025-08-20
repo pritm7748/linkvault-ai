@@ -25,8 +25,8 @@ export async function POST(req: NextRequest) {
 
     const { data: items, error } = await supabase.rpc('match_vault_items', {
       query_embedding: queryEmbedding,
-      // THE FIX: Lowered the threshold to be less strict and find more results
-      match_threshold: 0.5, 
+      query_text: query, // --- Pass the raw query text for tag matching ---
+      match_threshold: 0.5,
       match_count: 20,
       p_user_id: user.id
     })
@@ -39,7 +39,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(items)
 
   } catch (error: unknown) {
-    console.error("Error in /api/search:", error)
     if (error instanceof Error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

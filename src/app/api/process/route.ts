@@ -60,7 +60,16 @@ export async function POST(req: NextRequest) {
     let originalContent: string | null = null;
     let contentForAI: (string | Part)[];
     let storagePath: string | null = null;
-    let finalPrompt = '';
+    
+    // --- NEW, ADVANCED PROMPT ---
+    let finalPrompt = `
+      Analyze the following content. Perform these actions:
+      1.  Create a concise, descriptive title.
+      2.  Generate a list of 5-10 relevant tags.
+      3.  Write a detailed, paragraph-long summary. In this summary, you MUST naturally incorporate the most important keywords and concepts that you identified for the tags. This is critical for making the content searchable.
+
+      Here is the content:
+    `;
 
     if (contentType === 'image') {
       const file = formData.get('file') as File;
@@ -71,16 +80,17 @@ export async function POST(req: NextRequest) {
       storagePath = uploadData.path;
       const buffer = Buffer.from(await file.arrayBuffer());
       const base64Data = buffer.toString('base64');
-      contentForAI = [{ text: "Analyze this image..." }, { inlineData: { mimeType: file.type, data: base64Data } }];
+      contentForAI = [{ text: finalPrompt }, { inlineData: { mimeType: file.type, data: base64Data } }];
       originalContent = file.name;
     } else {
         const content = formData.get('content') as string;
         originalContent = content;
         let title = '';
         let description = '';
+        let bodyText = '';
 
         if (contentType === 'note') {
-          finalPrompt = `Analyze the following note: "${content}"`;
+          bodyText = content;
         } else if (contentType === 'link') {
             const response = await fetch(content);
             if (!response.ok) throw new Error(`Failed to fetch URL: ${response.statusText}`);
@@ -88,8 +98,7 @@ export async function POST(req: NextRequest) {
             const $ = cheerio.load(html);
             title = $('title').text() || $('meta[property="og:title"]').attr('content') || 'Title not found';
             description = $('meta[name="description"]').attr('content') || $('meta[property="og:description"]').attr('content') || '';
-            const bodyText = $('body').text().replace(/\s\s+/g, ' ').trim();
-            finalPrompt = `Analyze the following content from a webpage titled "${title}". The meta description is "${description}". The body text is: "${bodyText.substring(0, 5000)}"`;
+            bodyText = $('body').text().replace(/\s\s+/g, ' ').trim();
         } else if (contentType === 'video') {
             const youtubeVideoId = getYouTubeVideoId(content);
             if (!youtubeVideoId) {
@@ -98,9 +107,9 @@ export async function POST(req: NextRequest) {
             const details = await getYouTubeVideoDetails(youtubeVideoId);
             title = details.title;
             description = details.description;
-            finalPrompt = `Act as a media analyst. Based on the video's official title "${title}" and its description "${description}", provide an insightful summary. For the title of your response, use the actual video title provided.`;
         }
         
+        finalPrompt += `Title: "${title}". Description: "${description}". Body Text: "${bodyText.substring(0, 5000)}"`;
         contentForAI = [{ text: finalPrompt }];
     }
 
@@ -108,8 +117,8 @@ export async function POST(req: NextRequest) {
     const result = await model.generateContent(contentForAI);
     const aiJson = JSON.parse(result.response.text());
     
-    // --- THE FIX: Create a single text block for a richer embedding ---
-    const textForEmbedding = `Title: ${aiJson.title}\nSummary: ${aiJson.summary}\nTags: ${aiJson.tags.join(', ')}`;
+    // The embedding is now created from the AI-enriched summary, which contains the tags.
+    const textForEmbedding = `Title: ${aiJson.title}\nSummary: ${aiJson.summary}`;
 
     const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
     const embeddingResult = await embeddingModel.embedContent(textForEmbedding);
