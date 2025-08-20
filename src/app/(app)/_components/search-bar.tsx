@@ -3,11 +3,9 @@
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from '@/components/ui/button'
 import { Search, Wand2 } from 'lucide-react'
 import { QandADialog } from './q-and-a-dialog'
-// --- ADDED: Import the main details dialog ---
 import { ItemDetailsDialog } from '../vault/_components/item-details-dialog'
 
 type Source = {
@@ -21,29 +19,30 @@ export function SearchBar() {
   const searchParams = useSearchParams()
   
   const [query, setQuery] = useState(searchParams.get('q') || '')
-  const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || 'all')
 
+  // --- State for Q&A Dialog ---
   const [isQnOpen, setIsQnOpen] = useState(false)
   const [answer, setAnswer] = useState<string | null>(null)
   const [isLoadingAnswer, setIsLoadingAnswer] = useState(false)
   const [sources, setSources] = useState<Source[]>([])
   
-  // --- ADDED: State for the main ItemDetailsDialog ---
+  // --- State for the main ItemDetailsDialog ---
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+  // --- UPDATED: Simplified search function ---
+  const executeSearch = () => {
     if (!query) return;
-    
-    const params = new URLSearchParams()
-    params.set('q', query)
-    if (typeFilter !== 'all') {
-      params.set('type', typeFilter)
-    }
+    router.push(`/search?q=${encodeURIComponent(query)}`);
+  };
 
-    router.push(`/search?${params.toString()}`)
-  }
+  // --- NEW: Handle Enter key press for standard search ---
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      executeSearch();
+    }
+  };
 
   const handleAskAI = async () => {
     if (!query) return;
@@ -74,11 +73,8 @@ export function SearchBar() {
     }
   };
 
-  // --- ADDED: Handler for clicking a source item ---
   const handleSourceClick = (itemId: number) => {
-    // Close the Q&A dialog
     setIsQnOpen(false);
-    // Open the main details dialog with the selected item
     setSelectedItemId(itemId);
     setIsDetailsOpen(true);
   };
@@ -86,7 +82,8 @@ export function SearchBar() {
   return (
     <>
       <div className="w-full flex items-center gap-2">
-        <form onSubmit={handleSearch} className="relative flex-grow">
+        {/* --- UPDATED: The input is no longer inside a form --- */}
+        <div className="relative flex-grow">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
@@ -95,22 +92,15 @@ export function SearchBar() {
             className="w-full appearance-none bg-background pl-8 shadow-none"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown} // Added this handler
           />
-        </form>
+        </div>
 
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-[120px] shrink-0">
-            <SelectValue placeholder="Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="note">Notes</SelectItem>
-            <SelectItem value="link">Links</SelectItem>
-            <SelectItem value="image">Images</SelectItem>
-            <SelectItem value="video">Videos</SelectItem>
-          </SelectContent>
-        </Select>
-
+        {/* --- UPDATED: Replaced Select with two distinct buttons --- */}
+        <Button variant="outline" onClick={executeSearch} disabled={!query}>
+            <Search className="mr-2 h-4 w-4" />
+            Search
+        </Button>
         <Button onClick={handleAskAI} disabled={!query || isLoadingAnswer} className="bg-purple-600 hover:bg-purple-700">
           <Wand2 className="mr-2 h-4 w-4" />
           Ask
@@ -124,16 +114,14 @@ export function SearchBar() {
         answer={answer}
         isLoading={isLoadingAnswer}
         sources={sources}
-        // --- ADDED: Pass the handler to the dialog ---
         onSourceClick={handleSourceClick}
       />
       
-      {/* --- ADDED: The main ItemDetailsDialog to be controlled by this component --- */}
       <ItemDetailsDialog 
         itemId={selectedItemId}
         isOpen={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}
-        onUpdate={() => router.refresh()} // Refresh data on update
+        onUpdate={() => router.refresh()}
       />
     </>
   )
