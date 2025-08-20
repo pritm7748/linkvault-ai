@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator } from "@/components/ui/select"
 import { LoaderCircle } from 'lucide-react'
 
 type Collection = { id: number; name: string };
@@ -12,7 +12,6 @@ type MoveToCollectionDialogProps = {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   collections: Collection[];
-  // --- UPDATED: Accept an array of item IDs ---
   itemIds: number[]; 
   onItemMoved: (itemId: number, collectionId: number | null) => void;
 };
@@ -24,15 +23,28 @@ export function MoveToCollectionDialog({ isOpen, onOpenChange, collections, item
   const handleMoveItem = async () => {
     if (itemIds.length === 0 || selectedCollectionId === null) return;
     setIsSubmitting(true)
+    
     try {
-      // --- UPDATED: Loop through all selected items and move them ---
-      for (const itemId of itemIds) {
-        await fetch(`/api/vault/${itemId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ collection_id: Number(selectedCollectionId) || null }),
-        });
-        onItemMoved(itemId, Number(selectedCollectionId) || null)
+      if (selectedCollectionId === 'FAVORITES') {
+        // --- NEW: Handle favoriting items ---
+        for (const itemId of itemIds) {
+          await fetch(`/api/vault/${itemId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_favorited: true }),
+          });
+          // Note: We don't call onItemMoved here as it's not a collection move
+        }
+      } else {
+        // --- Existing logic for moving to a collection ---
+        for (const itemId of itemIds) {
+          await fetch(`/api/vault/${itemId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: Number(selectedCollectionId) || null }),
+          });
+          onItemMoved(itemId, Number(selectedCollectionId) || null)
+        }
       }
       onOpenChange(false) // Close dialog on success
     } catch (error) {
@@ -57,6 +69,9 @@ export function MoveToCollectionDialog({ isOpen, onOpenChange, collections, item
               <SelectValue placeholder="Select a collection..." />
             </SelectTrigger>
             <SelectContent>
+              {/* --- NEW: Add Favorites as a special option --- */}
+              <SelectItem value="FAVORITES">⭐ Favorites</SelectItem>
+              <SelectSeparator />
               {collections.map(collection => (
                 <SelectItem key={collection.id} value={String(collection.id)}>
                   {collection.name}

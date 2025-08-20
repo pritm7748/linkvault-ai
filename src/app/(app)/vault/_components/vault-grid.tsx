@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input' // --- ADDED ---
+import { Input } from '@/components/ui/input'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,7 +45,6 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
   const [itemToMove, setItemToMove] = useState<number | null>(null)
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false)
 
-  // --- NEW: State for multi-select ---
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
 
   const router = useRouter();
@@ -53,7 +52,6 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
   const isInCollectionView = pathname.includes('/collections/');
 
   const handleOpenDetails = (id: number) => { 
-    // Don't open details if we are in selection mode
     if (selectedItems.length > 0) return;
     setSelectedItemId(id); 
     setIsDetailsOpen(true); 
@@ -65,14 +63,12 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
     handleCloseDetails(); 
   }
 
-  // --- UPDATED: to handle both single and bulk moves ---
   const handleOpenMoveDialog = (id: number | null) => { 
     const itemsToMove = selectedItems.length > 0 ? selectedItems[0] : id;
     setItemToMove(itemsToMove); 
     setIsMoveDialogOpen(true); 
   }
   
-  // --- UPDATED: to handle both single and bulk moves ---
   const handleItemMoved = (itemId: number, collectionId: number | null) => {
     if (isInCollectionView) {
       if (selectedItems.length > 0) {
@@ -81,18 +77,15 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
         setItems(items.filter(item => item.id !== itemId));
       }
     }
-    setSelectedItems([]); // Clear selection after move
+    setSelectedItems([]);
   }
 
-  // --- UPDATED: to handle both single and bulk deletes ---
   const handleDelete = async () => {
     const idsToDelete = selectedItems.length > 0 ? selectedItems : (itemToDelete ? [itemToDelete] : []);
     if (idsToDelete.length === 0) return;
 
     setIsDeleting(true)
     try {
-      // Note: For simplicity, we send one request per item. 
-      // A more advanced implementation might use a dedicated bulk-delete endpoint.
       for (const id of idsToDelete) {
         await fetch('/api/vault', { 
           method: 'DELETE', 
@@ -106,7 +99,7 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
     } finally { 
       setIsDeleting(false); 
       setItemToDelete(null); 
-      setSelectedItems([]); // Clear selection
+      setSelectedItems([]);
     }
   }
 
@@ -147,9 +140,28 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
     }
   }
 
-  // --- NEW: Handler for selecting/deselecting an item ---
+  // --- NEW: Bulk remove handler ---
+  const handleBulkRemoveFromCollection = async () => {
+    const originalItems = items;
+    setItems(items.filter(item => !selectedItems.includes(item.id)));
+    try {
+        for (const itemId of selectedItems) {
+            await fetch(`/api/vault/${itemId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ collection_id: null }),
+            });
+        }
+    } catch (error) {
+        console.error("Failed to bulk remove items", error);
+        setItems(originalItems);
+    } finally {
+        setSelectedItems([]);
+    }
+  };
+
   const handleSelectItem = (e: React.MouseEvent, id: number) => {
-    e.stopPropagation(); // Prevent opening details dialog
+    e.stopPropagation();
     setSelectedItems(prev => 
       prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
     );
@@ -157,12 +169,18 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
 
   return (
     <>
-      {/* --- NEW: Bulk Action Bar --- */}
       {selectedItems.length > 0 && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white rounded-lg shadow-2xl p-2 flex items-center gap-4">
           <p className="text-sm font-medium">{selectedItems.length} item(s) selected</p>
           <Button variant="secondary" size="sm" onClick={() => handleOpenMoveDialog(null)}>Move</Button>
-          <Button variant="destructive" size="sm" onClick={() => setItemToDelete(1)}>Delete</Button>
+
+          {/* --- THE FIX: Conditional "Remove" or "Delete" button --- */}
+          {isInCollectionView ? (
+            <Button variant="destructive" size="sm" onClick={handleBulkRemoveFromCollection}>Remove</Button>
+          ) : (
+            <Button variant="destructive" size="sm" onClick={() => setItemToDelete(1)}>Delete</Button>
+          )}
+
           <Button variant="ghost" size="sm" onClick={() => setSelectedItems([])}>Clear</Button>
         </div>
       )}
@@ -176,7 +194,6 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
                 key={item.id} 
                 className={`bg-white border-slate-200 shadow-sm flex flex-col transition-all relative group ${isSelected ? 'shadow-lg border-blue-500' : 'hover:shadow-lg hover:-translate-y-1'}`}
               >
-                {/* --- NEW: Checkbox for multi-select --- */}
                 <div 
                   className="absolute top-2 left-2 z-10"
                   onClick={(e) => handleSelectItem(e, item.id)}
@@ -237,7 +254,6 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
       ) : ( <div className="text-center py-16 border-2 border-dashed rounded-lg bg-background"><h3 className="font-serif text-xl font-semibold">This space is empty.</h3><p className="text-muted-foreground mt-2">Add some items to get started.</p></div> )}
             
       <ItemDetailsDialog itemId={selectedItemId} isOpen={isDetailsOpen} onClose={handleCloseDetails} onUpdate={handleItemUpdate} />
-      {/* --- UPDATED: To handle bulk moves --- */}
       <MoveToCollectionDialog 
         isOpen={isMoveDialogOpen} 
         onOpenChange={setIsMoveDialogOpen} 
