@@ -1,11 +1,10 @@
-// src/app/api/collections/[id]/route.ts
-
 import { NextRequest, NextResponse } from 'next/server'
 import { createServer } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 
+// THE FIX: Added the correct type for the 'params' object.
 export async function DELETE(
-  req: NextRequest,
+  req: NextRequest, 
   { params }: { params: { id: string } }
 ) {
   const cookieStore = cookies()
@@ -22,8 +21,6 @@ export async function DELETE(
   }
 
   try {
-    // First, we need to un-link all items from this collection.
-    // This sets collection_id to null for all items in the collection.
     const { error: updateError } = await supabase
       .from('vault_items')
       .update({ collection_id: null })
@@ -35,7 +32,6 @@ export async function DELETE(
       throw new Error('Could not update items in collection.')
     }
 
-    // Now, we can safely delete the collection itself.
     const { error: deleteError } = await supabase
       .from('collections')
       .delete()
