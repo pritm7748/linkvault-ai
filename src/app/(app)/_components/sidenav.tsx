@@ -2,11 +2,10 @@
 
 import { useState, Fragment } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation' // --- ADDED useRouter ---
+import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { SheetClose } from '@/components/ui/sheet'
-// --- ADDED X icon and AlertDialog ---
 import { 
   LayoutDashboard, StickyNote, Link2, Image, Folder, PlusCircle, LogOut, User, Video, Star, X
 } from 'lucide-react' 
@@ -31,7 +30,7 @@ const NavLink = ({ href, children }: { href: string, children: React.ReactNode }
     <Link
       href={href}
       className={cn(
-        'group flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary', // --- ADDED group and justify-between ---
+        'group flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
         { 'bg-muted text-primary': pathname === href }
       )}
     >
@@ -42,7 +41,6 @@ const NavLink = ({ href, children }: { href: string, children: React.ReactNode }
 
 export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
   const [isNewCollectionOpen, setIsNewCollectionOpen] = useState(false)
-  // --- NEW: State to manage collections list and deletion dialog ---
   const [localCollections, setLocalCollections] = useState(collections);
   const [collectionToDelete, setCollectionToDelete] = useState<Collection | null>(null);
   const router = useRouter();
@@ -58,26 +56,28 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
   
   const LinkWrapper = isSheet ? SheetClose : Fragment;
 
-  // --- NEW: Handler for deleting a collection ---
   const handleDeleteCollection = async () => {
     if (!collectionToDelete) return;
 
-    // Optimistic UI update
+    const originalCollections = localCollections;
     setLocalCollections(localCollections.filter(c => c.id !== collectionToDelete.id));
     
     try {
-        await fetch(`/api/collections/${collectionToDelete.id}`, { method: 'DELETE' });
+        // --- THE FIX: Call the new dedicated API route with the ID in the body ---
+        await fetch(`/api/collections/delete`, { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: collectionToDelete.id })
+        });
+        
         setCollectionToDelete(null);
-        // Refresh the page layout to ensure data consistency
         router.refresh();
-        // If user is on the deleted collection page, redirect them to the main vault
         if (window.location.pathname.includes(`/collections/${collectionToDelete.id}`)) {
             router.push('/vault');
         }
     } catch (error) {
         console.error("Failed to delete collection", error);
-        // Revert on error
-        setLocalCollections(collections);
+        setLocalCollections(originalCollections);
     }
   };
 
@@ -96,7 +96,7 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
             {mainNavItems.map((item) => (
               <LinkWrapper asChild key={item.href}>
                 <NavLink href={item.href}>
-                  <div className="flex items-center gap-3"> {/* Wrapper for icon and label */}
+                  <div className="flex items-center gap-3">
                     <item.icon className="h-4 w-4" />
                     {item.label}
                   </div>
@@ -129,7 +129,6 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
                           <Folder className="h-4 w-4" />
                           <span className="truncate">{collection.name}</span>
                         </div>
-                        {/* --- NEW: Delete button that shows on hover --- */}
                         <Button 
                           variant="ghost" 
                           size="icon" 
@@ -168,7 +167,6 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
       </div>
       <NewCollectionDialog isOpen={isNewCollectionOpen} onOpenChange={setIsNewCollectionOpen} />
 
-      {/* --- NEW: Confirmation Dialog for Deleting Collections --- */}
       <AlertDialog open={!!collectionToDelete} onOpenChange={() => setCollectionToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

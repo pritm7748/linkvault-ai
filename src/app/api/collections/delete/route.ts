@@ -1,12 +1,10 @@
+// src/app/api/collections/delete/route.ts
+
 import { NextRequest, NextResponse } from 'next/server'
 import { createServer } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 
-// THE DEFINITIVE FIX: Destructure params directly in the function signature with the correct type.
-export async function DELETE(
-  request: NextRequest, 
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest) {
   const cookieStore = cookies()
   const supabase = createServer(cookieStore)
   const { data: { user } } = await supabase.auth.getUser()
@@ -15,8 +13,9 @@ export async function DELETE(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const collectionId = parseInt(params.id, 10)
-  if (isNaN(collectionId)) {
+  const { id: collectionId } = await req.json();
+
+  if (!collectionId || isNaN(collectionId)) {
     return NextResponse.json({ error: 'Invalid collection ID' }, { status: 400 })
   }
 
