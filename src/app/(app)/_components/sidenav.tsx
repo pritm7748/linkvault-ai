@@ -2,11 +2,18 @@
 
 import { useState, Fragment } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation' // --- ADDED useRouter ---
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { SheetClose } from '@/components/ui/sheet'
-import { LayoutDashboard, StickyNote, Link2, Image, Folder, PlusCircle, LogOut, User, Video, Star } from 'lucide-react' 
+// --- ADDED X icon and AlertDialog ---
+import { 
+  LayoutDashboard, StickyNote, Link2, Image, Folder, PlusCircle, LogOut, User, Video, Star, X
+} from 'lucide-react' 
+import { 
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle 
+} from '@/components/ui/alert-dialog'
 import { NewCollectionDialog } from './new-collection-dialog'
 
 type Collection = { id: number; name: string };
@@ -24,7 +31,7 @@ const NavLink = ({ href, children }: { href: string, children: React.ReactNode }
     <Link
       href={href}
       className={cn(
-        'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+        'group flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary', // --- ADDED group and justify-between ---
         { 'bg-muted text-primary': pathname === href }
       )}
     >
@@ -35,10 +42,13 @@ const NavLink = ({ href, children }: { href: string, children: React.ReactNode }
 
 export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
   const [isNewCollectionOpen, setIsNewCollectionOpen] = useState(false)
+  // --- NEW: State to manage collections list and deletion dialog ---
+  const [localCollections, setLocalCollections] = useState(collections);
+  const [collectionToDelete, setCollectionToDelete] = useState<Collection | null>(null);
+  const router = useRouter();
 
   const mainNavItems = [
     { href: '/vault', label: 'All Items', icon: LayoutDashboard },
-    // --- REMOVED FAVORITES FROM HERE ---
     { href: '/add/note', label: 'Add Note', icon: StickyNote },
     { href: '/add/link', label: 'Add Link', icon: Link2 },
     { href: '/add/image', label: 'Add Image', icon: Image },
@@ -46,8 +56,30 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
     { href: '/profile', label: 'Profile', icon: User },
   ]
   
-  
   const LinkWrapper = isSheet ? SheetClose : Fragment;
+
+  // --- NEW: Handler for deleting a collection ---
+  const handleDeleteCollection = async () => {
+    if (!collectionToDelete) return;
+
+    // Optimistic UI update
+    setLocalCollections(localCollections.filter(c => c.id !== collectionToDelete.id));
+    
+    try {
+        await fetch(`/api/collections/${collectionToDelete.id}`, { method: 'DELETE' });
+        setCollectionToDelete(null);
+        // Refresh the page layout to ensure data consistency
+        router.refresh();
+        // If user is on the deleted collection page, redirect them to the main vault
+        if (window.location.pathname.includes(`/collections/${collectionToDelete.id}`)) {
+            router.push('/vault');
+        }
+    } catch (error) {
+        console.error("Failed to delete collection", error);
+        // Revert on error
+        setLocalCollections(collections);
+    }
+  };
 
   return (
     <>
@@ -62,11 +94,12 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
         <div className="flex-1 overflow-y-auto">
           <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
             {mainNavItems.map((item) => (
-              
               <LinkWrapper asChild key={item.href}>
                 <NavLink href={item.href}>
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
+                  <div className="flex items-center gap-3"> {/* Wrapper for icon and label */}
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </div>
                 </NavLink>
               </LinkWrapper>
             ))}
@@ -80,19 +113,35 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
                   </Button>
               </div>
               <nav className="grid items-start text-sm font-medium">
-                  {/* --- ADDED FAVORITES LINK HERE --- */}
                   <LinkWrapper asChild>
                     <NavLink href="/vault/favorites">
-                      <Star className="h-4 w-4" />
-                      Favorites
+                      <div className="flex items-center gap-3">
+                        <Star className="h-4 w-4" />
+                        Favorites
+                      </div>
                     </NavLink>
                   </LinkWrapper>
 
-                  {collections.map((collection) => (
+                  {localCollections.map((collection) => (
                     <LinkWrapper asChild key={collection.id}>
                       <NavLink href={`/collections/${collection.id}`}>
+                        <div className="flex items-center gap-3">
                           <Folder className="h-4 w-4" />
-                          {collection.name}
+                          <span className="truncate">{collection.name}</span>
+                        </div>
+                        {/* --- NEW: Delete button that shows on hover --- */}
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setCollectionToDelete(collection);
+                          }}
+                        >
+                          <X className="h-4 w-4 text-muted-foreground" />
+                        </Button>
                       </NavLink>
                     </LinkWrapper>
                   ))}
@@ -118,6 +167,28 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
         </div>
       </div>
       <NewCollectionDialog isOpen={isNewCollectionOpen} onOpenChange={setIsNewCollectionOpen} />
+
+      {/* --- NEW: Confirmation Dialog for Deleting Collections --- */}
+      <AlertDialog open={!!collectionToDelete} onOpenChange={() => setCollectionToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the &quot;{collectionToDelete?.name}&quot; collection. 
+              Items within this collection will NOT be deleted from your vault.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteCollection}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

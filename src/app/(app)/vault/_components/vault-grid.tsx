@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation' // --- ADDED ---
+import { useState, useEffect } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -20,18 +20,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-// --- ADDED Star ICON ---
-import { MoreHorizontal, Trash2, Edit, FolderInput, Star } from 'lucide-react'
+import { MoreHorizontal, Trash2, Edit, FolderInput, Star, LogOut } from 'lucide-react'
 import { ItemDetailsDialog } from './item-details-dialog'
 import { MoveToCollectionDialog } from './move-to-collection-dialog'
 
-// --- UPDATED VaultItem TYPE ---
 type VaultItem = { 
   id: number; 
   processed_title: string | null; 
   processed_summary: string | null; 
   processed_tags: string[] | null; 
-  is_favorited: boolean; // Add the new field
+  is_favorited: boolean;
 };
 type Collection = { id: number; name: string };
 
@@ -46,7 +44,9 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
   const [itemToMove, setItemToMove] = useState<number | null>(null)
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false)
 
-  const router = useRouter(); // --- ADDED ---
+  const router = useRouter();
+  const pathname = usePathname();
+  const isInCollectionView = pathname.includes('/collections/');
 
   const handleOpenDetails = (id: number) => { setSelectedItemId(id); setIsDetailsOpen(true); }
   const handleCloseDetails = () => { setIsDetailsOpen(false); setSelectedItemId(null); }
@@ -59,7 +59,7 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
   const handleOpenMoveDialog = (id: number) => { setItemToMove(id); setIsMoveDialogOpen(true); }
   
   const handleItemMoved = (itemId: number, _collectionId: number | null) => {
-    if (window.location.pathname.includes('/collections/')) {
+    if (isInCollectionView) {
         setItems(items.filter(item => item.id !== itemId))
     }
   }
@@ -73,7 +73,6 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
     } catch (error) { console.error(error) } finally { setIsDeleting(false); setItemToDelete(null); }
   }
 
-  // --- NEW: Function to toggle an item's favorite status ---
   const handleToggleFavorite = async (e: React.MouseEvent, itemToToggle: VaultItem) => {
     e.stopPropagation(); 
     
@@ -92,13 +91,31 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
       if (!response.ok) {
         throw new Error('Failed to update favorite status');
       }
-      // Add this line to use the router and refresh server data
       router.refresh(); 
     } catch (error) {
       console.error(error);
       setItems(originalItems); 
     }
   };
+  
+  const handleRemoveFromCollection = async (itemId: number) => {
+    const originalItems = items;
+    setItems(items.filter(item => item.id !== itemId));
+
+    try {
+        const response = await fetch(`/api/vault/${itemId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ collection_id: null }),
+        });
+        if (!response.ok) {
+            throw new Error('Failed to remove item from collection');
+        }
+    } catch (error) {
+        console.error(error);
+        setItems(originalItems);
+    }
+  }
 
   return (
     <>
@@ -107,7 +124,6 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
           {items.map((item) => (
             <Card key={item.id} className="bg-white border-slate-200 shadow-sm flex flex-col transition-all hover:shadow-lg hover:-translate-y-1 relative">
               
-              {/* --- NEW: Star Button --- */}
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -136,7 +152,16 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
                    <DropdownMenuContent align="end">
                      <DropdownMenuItem onClick={() => handleOpenDetails(item.id)} className="cursor-pointer"><Edit className="mr-2 h-4 w-4" />View / Edit</DropdownMenuItem>
                      <DropdownMenuItem onClick={() => handleOpenMoveDialog(item.id)} className="cursor-pointer"><FolderInput className="mr-2 h-4 w-4" />Move to...</DropdownMenuItem>
-                     <DropdownMenuItem onClick={() => setItemToDelete(item.id)} className="text-red-500 cursor-pointer"><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+
+                     {isInCollectionView ? (
+                        <DropdownMenuItem onClick={() => handleRemoveFromCollection(item.id)} className="text-orange-600 cursor-pointer focus:bg-orange-50 focus:text-orange-700">
+                            <LogOut className="mr-2 h-4 w-4" />Remove from Collection
+                        </DropdownMenuItem>
+                     ) : (
+                        <DropdownMenuItem onClick={() => setItemToDelete(item.id)} className="text-red-500 cursor-pointer focus:bg-red-50 focus:text-red-700">
+                            <Trash2 className="mr-2 h-4 w-4" />Delete
+                        </DropdownMenuItem>
+                     )}
                    </DropdownMenuContent>
                  </DropdownMenu>
               </CardFooter>
@@ -148,7 +173,17 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
       <ItemDetailsDialog itemId={selectedItemId} isOpen={isDetailsOpen} onClose={handleCloseDetails} onUpdate={handleItemUpdate} />
       <MoveToCollectionDialog isOpen={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen} collections={collections} itemId={itemToMove} onItemMoved={handleItemMoved} />
       <AlertDialog open={itemToDelete !== null} onOpenChange={() => setItemToDelete(null)}>
-        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone and will permanently delete this item.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-red-600 hover:bg-red-700">{isDeleting ? 'Deleting...' : 'Delete'}</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>This action cannot be undone and will permanently delete this item.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-red-600 hover:bg-red-700">{isDeleting ? 'Deleting...' : 'Delete'}</AlertDialogAction>
+            {/* --- THE FIX: Corrected the closing tag --- */}
+            </AlertDialogFooter>
+        </AlertDialogContent>
       </AlertDialog>
     </>
   )
