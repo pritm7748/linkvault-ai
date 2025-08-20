@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServer } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 
-// THE FIX: The first parameter must be the request object.
+// THE FIX: The first parameter must be the request object, req.
 export async function DELETE(
   req: NextRequest, 
   { params }: { params: { id: string } }
