@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServer } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 
-// THE FIX: The function signature was corrected to match Next.js API route conventions.
+// THE DEFINITIVE FIX: Destructure params directly in the function signature with the correct type.
 export async function DELETE(
-  req: NextRequest, 
+  request: NextRequest, 
   { params }: { params: { id: string } }
 ) {
   const cookieStore = cookies()
