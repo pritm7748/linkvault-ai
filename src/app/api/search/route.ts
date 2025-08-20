@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServer } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { cookies } from 'next/headers' // --- ADD THIS IMPORT ---
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = cookies() // --- ADD THIS LINE ---
-    const supabase = createServer(cookieStore) // --- PASS cookieStore HERE & REMOVE AWAIT ---
+    const cookieStore = cookies()
+    const supabase = createServer(cookieStore)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { query, type } = await req.json()
+    const { query } = await req.json()
     if (!query) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 })
     }
@@ -25,9 +25,9 @@ export async function POST(req: NextRequest) {
 
     const { data: items, error } = await supabase.rpc('match_vault_items', {
       query_embedding: queryEmbedding,
-      match_threshold: 0.7,
+      // THE FIX: Lowered the threshold to be less strict and find more results
+      match_threshold: 0.5, 
       match_count: 20,
-      // Pass the user_id to the RPC function for filtering
       p_user_id: user.id
     })
 
@@ -36,11 +36,7 @@ export async function POST(req: NextRequest) {
       throw new Error(`Database error: ${error.message}`)
     }
 
-    const filteredItems = type && type !== 'all'
-      ? items.filter((item: { content_type: string }) => item.content_type === type)
-      : items;
-
-    return NextResponse.json(filteredItems)
+    return NextResponse.json(items)
 
   } catch (error: unknown) {
     console.error("Error in /api/search:", error)
