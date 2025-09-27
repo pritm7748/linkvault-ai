@@ -113,7 +113,8 @@ export async function POST(req: NextRequest) {
         contentForAI = [{ text: finalPrompt }];
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash", generationConfig: { responseMimeType: "application/json", responseSchema: jsonSchema }});
+    // FIX: Updated model from "gemini-1.5-flash" to the new stable version "gemini-2.0-flash-001"
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-001", generationConfig: { responseMimeType: "application/json", responseSchema: jsonSchema }});
     const result = await model.generateContent(contentForAI);
     const aiJson = JSON.parse(result.response.text());
     
