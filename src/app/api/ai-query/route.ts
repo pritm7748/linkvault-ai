@@ -17,7 +17,6 @@ type MatchedItem = {
 
 export async function POST(req: NextRequest) {
   try {
-    // FIX: Do NOT await cookies(). Pass the Promise directly.
     const cookieStore = cookies();
     const supabase = createServer(cookieStore);
     const { data: { user } } = await supabase.auth.getUser()
@@ -70,22 +69,24 @@ export async function POST(req: NextRequest) {
       ${query}
     `;
 
-    // Updated to Gemini 2.0 Flash for speed
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     const result = await model.generateContent(prompt);
     const response = result.response;
     const answer = response.text();
 
     return NextResponse.json({ answer, sources: typedItems });
 
-  } catch (error: any) {
+  } catch (error: unknown) { // FIX: Use 'unknown' instead of 'any'
     console.error("Error in /api/ai-query:", error)
-    if (error.message?.includes('429')) {
+    
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+    
+    if (errorMessage.includes('429')) {
         return NextResponse.json({ 
             answer: "The AI is currently busy. Please try again in a minute.",
             sources: []
         });
     }
-    return NextResponse.json({ error: error.message || 'An unexpected error occurred.' }, { status: 500 });
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

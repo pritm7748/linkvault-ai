@@ -3,15 +3,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServer } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
-import { GoogleGenerativeAI, Schema, SchemaType } from '@google/generative-ai'
+import { GoogleGenerativeAI, Schema, SchemaType, Part } from '@google/generative-ai'
 import { YoutubeTranscript } from 'youtube-transcript';
 import * as cheerio from 'cheerio';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-// FIX 2: Use 'as const' or explicit casting to fix Enum widening
 const jsonSchema: Schema = {
-  type: SchemaType.OBJECT as const, 
+  type: SchemaType.OBJECT as const,
   properties: {
     title: { type: SchemaType.STRING as const },
     summary: { type: SchemaType.STRING as const },
@@ -34,11 +33,8 @@ function getYouTubeVideoId(url: string): string | null {
 }
 
 export async function POST(req: NextRequest) {
-  // FIX 1: Do NOT await cookies(). Pass the Promise directly.
-  const cookieStore = cookies(); 
+  const cookieStore = cookies();
   const supabase = createServer(cookieStore);
-  
-  // Note: We need to await getUser() because supabase is async now
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -47,7 +43,10 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const contentType = formData.get('contentType') as string;
     let originalContent: string | null = null;
-    let contentForAI: any[] = [];
+    
+    // FIX 1: Explicitly type this array using the SDK's 'Part' type
+    let contentForAI: (string | Part)[] = []; 
+    
     let storagePath: string | null = null;
 
     if (contentType === 'image') {
@@ -92,7 +91,7 @@ export async function POST(req: NextRequest) {
             try {
                 const transcriptItems = await YoutubeTranscript.fetchTranscript(youtubeVideoId);
                 transcriptText = transcriptItems.map(item => item.text).join(' ');
-            } catch (e) {
+            } catch (_) { // FIX 2: Use underscore to ignore unused variable
                 console.log("Transcript not available, using metadata only.");
                 transcriptText = "Transcript unavailable.";
             }
@@ -101,9 +100,8 @@ export async function POST(req: NextRequest) {
         }
     }
 
-    // Using Gemini 2.0/2.5 Pro logic
     const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.5-flash", 
+        model: "gemini-2.0-flash", 
         generationConfig: { 
             responseMimeType: "application/json", 
             responseSchema: jsonSchema 
@@ -133,8 +131,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ message: 'Success', newItem });
 
-  } catch (error: any) {
+  } catch (error: unknown) { // FIX 3: Use 'unknown' instead of 'any'
     console.error("Process Error", error);
-    return NextResponse.json({ error: error.message || 'An unexpected error occurred.' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
