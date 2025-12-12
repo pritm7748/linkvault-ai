@@ -111,6 +111,23 @@
   --sidebar-ring: oklch(0.552 0.016 285.938);
 }
 
+@layer utilities {
+  /* The Glassmorphism Card Style */
+  .glass-card {
+    @apply bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl;
+  }
+  
+  /* The Futuristic Text Gradient */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600;
+  }
+
+  /* Input styles specific to the dark glass theme */
+  .glass-input {
+    @apply bg-white/5 border-white/10 text-white placeholder:text-gray-400 focus-visible:border-cyan-400/50 focus-visible:ring-cyan-400/20;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
