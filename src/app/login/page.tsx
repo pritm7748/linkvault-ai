@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ChromeIcon, GithubIcon, LoaderCircle, Sparkles } from 'lucide-react' 
+import { ChromeIcon, GithubIcon, LoaderCircle, Sparkles, type LucideIcon } from 'lucide-react' 
 
 // --- 1. SUB-COMPONENTS (Clean & Modular) ---
 
-function SocialButton({ icon: Icon, label, onClick }: { icon: any, label: string, onClick: () => void }) {
+// FIX 1: Added explicit 'LucideIcon' type for the icon prop
+function SocialButton({ icon: Icon, label, onClick }: { icon: LucideIcon, label: string, onClick: () => void }) {
   return (
     <Button 
       variant="outline" 
@@ -54,8 +55,13 @@ function AuthForm({ mode }: { mode: 'signin' | 'signup' | 'magic' }) {
         if (error) throw error
         router.push('/vault')
       }
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.message })
+    // FIX 2: Changed 'err: any' to 'error: unknown' and added type check
+    } catch (error: unknown) {
+      let errorMessage = "An unexpected error occurred";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      setMessage({ type: 'error', text: errorMessage })
     } finally {
       setLoading(false)
     }
@@ -103,8 +109,11 @@ function AuthForm({ mode }: { mode: 'signin' | 'signup' | 'magic' }) {
 
 // --- 2. MAIN PAGE LAYOUT ---
 
+// Define a type for the auth modes to avoid 'any' casting
+type AuthMode = 'signin' | 'signup' | 'magic';
+
 export default function LoginPage() {
-  const [mode, setMode] = useState<'signin' | 'signup' | 'magic'>('signin')
+  const [mode, setMode] = useState<AuthMode>('signin')
   const supabase = createClient()
 
   const handleOAuth = (provider: 'google' | 'github') => {
@@ -112,6 +121,13 @@ export default function LoginPage() {
       provider, options: { redirectTo: `${location.origin}/auth/callback` },
     })
   }
+
+  // FIX 3: Typed the array so 'tab.id' is known to be AuthMode
+  const tabs: { id: AuthMode; label: string }[] = [
+    { id: 'signin', label: 'Sign In' },
+    { id: 'signup', label: 'Sign Up' },
+    { id: 'magic', label: 'Magic' }
+  ];
 
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden font-sans selection:bg-cyan-500/30">
@@ -157,14 +173,10 @@ export default function LoginPage() {
 
             {/* Segmented Controller */}
             <div className="grid grid-cols-3 gap-1 p-1 bg-zinc-900/50 rounded-lg border border-white/5">
-              {[
-                { id: 'signin', label: 'Sign In' },
-                { id: 'signup', label: 'Sign Up' },
-                { id: 'magic', label: 'Magic' }
-              ].map((tab) => (
+              {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setMode(tab.id as any)}
+                  onClick={() => setMode(tab.id)} // No casting needed now
                   className={`text-xs font-medium py-2 rounded-md transition-all duration-300 ${
                     mode === tab.id ? 'glass-tab-active' : 'text-zinc-500 hover:text-zinc-300'
                   }`}
