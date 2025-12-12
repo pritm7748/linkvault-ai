@@ -111,32 +111,11 @@
   --sidebar-ring: oklch(0.552 0.016 285.938);
 }
 
-@layer utilities {
-  /* High-End Glass Effect */
-  .glass-panel {
-    @apply bg-zinc-950/40 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/50;
-  }
-
-  /* Inner Glow for the active tab */
-  .glass-tab-active {
-    @apply bg-zinc-800/50 text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)];
-  }
-
-  /* Cinematic Text Gradient */
-  .text-glow {
-    @apply bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)];
-  }
-
-  /* Input Fields with focus glow */
-  .tech-input {
-    @apply bg-zinc-950/50 border-white/5 text-zinc-100 placeholder:text-zinc-600 
-           focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50 
-           transition-all duration-300;
-  }
-}
-
 @layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
   body {
-    @apply bg-zinc-950 text-zinc-100 antialiased;
+    @apply bg-background text-foreground;
   }
 }

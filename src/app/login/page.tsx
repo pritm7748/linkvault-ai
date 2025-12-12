@@ -5,207 +5,149 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ChromeIcon, GithubIcon, LoaderCircle, Sparkles, type LucideIcon } from 'lucide-react' 
+import { Label } from "@/components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+// THE FIX: Removed unused 'KeyRound', 'Mail', and 'Wand2' imports
+import { ChromeIcon, LoaderCircle } from 'lucide-react' 
+import { GitHubLogoIcon } from '@radix-ui/react-icons'
 
-// --- 1. SUB-COMPONENTS (Clean & Modular) ---
-
-// FIX 1: Added explicit 'LucideIcon' type for the icon prop
-function SocialButton({ icon: Icon, label, onClick }: { icon: LucideIcon, label: string, onClick: () => void }) {
-  return (
-    <Button 
-      variant="outline" 
-      onClick={onClick} 
-      className="h-11 bg-white/5 border-white/10 text-zinc-300 hover:bg-white/10 hover:text-white hover:border-white/20 transition-all duration-300"
-    >
-      <Icon className="mr-2 h-4 w-4" /> {label}
-    </Button>
-  )
-}
-
-function AuthForm({ mode }: { mode: 'signin' | 'signup' | 'magic' }) {
+function PasswordAuthForm({ action }: { action: 'signin' | 'signup' }) {
   const router = useRouter()
   const supabase = createClient()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
+    setIsSubmitting(true)
     setMessage(null)
 
-    try {
-      if (mode === 'magic') {
-        const { error } = await supabase.auth.signInWithOtp({
-          email, options: { emailRedirectTo: `${location.origin}/auth/callback` }
-        })
-        if (error) throw error
-        setMessage({ type: 'success', text: "Magic link sent! Check your inbox." })
-      } 
-      else if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({ 
-          email, password, options: { emailRedirectTo: `${location.origin}/auth/callback` }
-        })
-        if (error) throw error
-        setMessage({ type: 'success', text: "Account created! Check email to verify." })
-      } 
-      else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) throw error
-        router.push('/vault')
+    if (action === 'signup') {
+      if (password.length < 6) {
+        setMessage("Password must be at least 6 characters long.")
+        setIsSubmitting(false)
+        return
       }
-    // FIX 2: Changed 'err: any' to 'error: unknown' and added type check
-    } catch (error: unknown) {
-      let errorMessage = "An unexpected error occurred";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      setMessage({ type: 'error', text: errorMessage })
-    } finally {
-      setLoading(false)
+      const { error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: { emailRedirectTo: `${location.origin}/auth/callback` }
+      });
+      if (error) setMessage(error.message)
+      else setMessage("Check your email for a verification link!")
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) setMessage(error.message)
+      else router.push('/')
     }
+    setIsSubmitting(false)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 mt-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div className="space-y-4">
-        <Input 
-          type="email" 
-          placeholder="name@work-email.com" 
-          required 
-          value={email} 
-          onChange={(e) => setEmail(e.target.value)} 
-          className="tech-input h-11" 
-        />
-        {mode !== 'magic' && (
-          <Input 
-            type="password" 
-            placeholder="Password" 
-            required 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            className="tech-input h-11" 
-          />
-        )}
+    <form onSubmit={handleSubmit} className="grid gap-4">
+      <div className="grid gap-2">
+        <Label htmlFor={`${action}-email`}>Email</Label>
+        <Input id={`${action}-email`} type="email" placeholder="m@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
       </div>
-
-      {message && (
-        <div className={`text-xs p-3 rounded border ${message.type === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-200' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200'}`}>
-          {message.text}
-        </div>
-      )}
-
-      <Button 
-        type="submit" 
-        disabled={loading}
-        className="w-full h-11 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-medium tracking-wide shadow-lg shadow-cyan-900/20 border-0"
-      >
-        {loading ? <LoaderCircle className="animate-spin" /> : (mode === 'magic' ? 'Send Magic Link' : mode === 'signin' ? 'Enter Vault' : 'Create Account')}
+      <div className="grid gap-2">
+        <Label htmlFor={`${action}-password`}>Password</Label>
+        <Input id={`${action}-password`} type="password" placeholder="••••••••" required value={password} onChange={(e) => setPassword(e.target.value)} />
+      </div>
+      {message && <p className="text-center text-sm text-green-400 p-2 bg-green-900/20 rounded-md">{message}</p>}
+      <Button type="submit" className="w-full" disabled={isSubmitting}>
+        {isSubmitting ? <LoaderCircle className="animate-spin" /> : (action === 'signin' ? 'Sign In' : 'Sign Up')}
       </Button>
     </form>
   )
 }
 
-// --- 2. MAIN PAGE LAYOUT ---
+function MagicLinkForm() {
+    const supabase = createClient()
+    const [email, setEmail] = useState('')
+    const [message, setMessage] = useState<string | null>(null)
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
-// Define a type for the auth modes to avoid 'any' casting
-type AuthMode = 'signin' | 'signup' | 'magic';
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setIsSubmitting(true)
+        setMessage(null)
+        const { error } = await supabase.auth.signInWithOtp({
+            email,
+            options: { emailRedirectTo: `${location.origin}/auth/callback` }
+        })
+        if (error) setMessage(error.message)
+        else setMessage("Check your email for a magic link!")
+        setIsSubmitting(false)
+    }
+
+    return (
+        <form onSubmit={handleSubmit} className="grid gap-4">
+            <div className="grid gap-2">
+                <Label htmlFor="magic-email">Email</Label>
+                <Input id="magic-email" type="email" placeholder="m@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+            {message && <p className="text-center text-sm text-green-400 p-2 bg-green-900/20 rounded-md">{message}</p>}
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? <LoaderCircle className="animate-spin" /> : 'Send Magic Link'}
+            </Button>
+        </form>
+    )
+}
 
 export default function LoginPage() {
-  const [mode, setMode] = useState<AuthMode>('signin')
   const supabase = createClient()
 
-  const handleOAuth = (provider: 'google' | 'github') => {
-    supabase.auth.signInWithOAuth({
-      provider, options: { redirectTo: `${location.origin}/auth/callback` },
+  const handleOAuthLogin = async (provider: 'google' | 'github') => {
+    await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: `${location.origin}/auth/callback` },
     })
   }
 
-  // FIX 3: Typed the array so 'tab.id' is known to be AuthMode
-  const tabs: { id: AuthMode; label: string }[] = [
-    { id: 'signin', label: 'Sign In' },
-    { id: 'signup', label: 'Sign Up' },
-    { id: 'magic', label: 'Magic' }
-  ];
-
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden font-sans selection:bg-cyan-500/30">
-      
-      {/* Cinematic Background */}
-      <div className="absolute inset-0 z-0">
-        <div 
-          className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-color-dodge"
-          style={{ backgroundImage: "url('/background.jpg')" }} 
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/80 to-zinc-950/40" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyan-900/10 via-zinc-950/0 to-zinc-950" />
+    <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen" suppressHydrationWarning>
+      <div className="flex items-center justify-center py-12">
+        <Card className="mx-auto w-[400px] border-none shadow-none">
+          <CardHeader className="text-center">
+            <CardTitle className="text-3xl font-bold">LinkVault AI</CardTitle>
+            <CardDescription>Your intelligent second brain.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="signin" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="signin">Password</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                <TabsTrigger value="magiclink">Magic Link</TabsTrigger>
+              </TabsList>
+              <TabsContent value="signin"><PasswordAuthForm action="signin" /></TabsContent>
+              <TabsContent value="signup"><PasswordAuthForm action="signup" /></TabsContent>
+              <TabsContent value="magiclink"><MagicLinkForm /></TabsContent>
+            </Tabs>
+            <div className="mt-4 relative">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+              <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">Or</span></div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-4">
+                <Button variant="outline" type="button" onClick={() => handleOAuthLogin('google')}>
+                    <ChromeIcon className="mr-2 h-4 w-4" /> Google
+                </Button>
+                 <Button variant="outline" type="button" onClick={() => handleOAuthLogin('github')}>
+                    <GitHubLogoIcon className="mr-2 h-4 w-4" /> GitHub
+                </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-
-      <div className="z-10 w-full max-w-6xl grid lg:grid-cols-2 gap-16 p-6 items-center">
-        
-        {/* Left: Brand Identity */}
-        <div className="space-y-8 text-center lg:text-left hidden lg:block">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-cyan-200">
-            <Sparkles className="w-3 h-3" />
-            <span>v2.0 Now Live</span>
-          </div>
-          <h1 className="text-7xl font-bold tracking-tight text-white leading-[1.1]">
-            Extend <br />
-            <span className="text-glow">Your Mind.</span>
-          </h1>
-          <p className="text-xl text-zinc-400 max-w-md leading-relaxed">
-            The AI memory layer for everything you read, watch, and save.
-          </p>
-        </div>
-
-        {/* Right: The Interface */}
-        <div className="w-full max-w-[420px] mx-auto lg:mx-0 lg:ml-auto">
-          <div className="glass-panel p-8 rounded-2xl relative overflow-hidden group">
-            
-            {/* Subtle Top Highlight */}
-            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50" />
-
-            <div className="mb-8 text-center lg:text-left">
-              <h2 className="text-2xl font-semibold text-white tracking-tight">Welcome back</h2>
-              <p className="text-sm text-zinc-500 mt-1">Authenticate to access your vault</p>
-            </div>
-
-            {/* Segmented Controller */}
-            <div className="grid grid-cols-3 gap-1 p-1 bg-zinc-900/50 rounded-lg border border-white/5">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setMode(tab.id)} // No casting needed now
-                  className={`text-xs font-medium py-2 rounded-md transition-all duration-300 ${
-                    mode === tab.id ? 'glass-tab-active' : 'text-zinc-500 hover:text-zinc-300'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            <AuthForm mode={mode} />
-
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-white/5" /></div>
-              <div className="relative flex justify-center text-[10px] uppercase tracking-widest"><span className="bg-zinc-900/50 px-2 text-zinc-600">Or continue with</span></div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <SocialButton icon={ChromeIcon} label="Google" onClick={() => handleOAuth('google')} />
-              <SocialButton icon={GithubIcon} label="GitHub" onClick={() => handleOAuth('github')} />
-            </div>
-
-          </div>
-          
-          {/* Mobile-only Branding Footer */}
-          <p className="lg:hidden text-center text-zinc-600 text-xs mt-8">
-            LinkVault AI — Extend Your Mind
-          </p>
-        </div>
-
+      <div className="hidden bg-muted lg:flex items-center justify-center p-12 bg-gradient-to-br from-gray-900 via-purple-900 to-violet-600">
+         <div className="text-center">
+            <h1 className="text-5xl font-bold text-white tracking-tighter">Save Anything.</h1>
+            <h1 className="text-5xl font-bold text-white tracking-tighter">Find Everything.</h1>
+            {/* THE FIX: Replaced ' with &apos; */}
+            <p className="mt-4 text-lg text-purple-200">The last knowledge tool you&apos;ll ever need.</p>
+         </div>
       </div>
     </div>
   )
