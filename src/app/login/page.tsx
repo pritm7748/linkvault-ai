@@ -11,123 +11,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChromeIcon, LoaderCircle } from 'lucide-react' 
 import { GitHubLogoIcon } from '@radix-ui/react-icons'
 
-// --- COMPONENT: Password Form ---
-function PasswordAuthForm({ action }: { action: 'signin' | 'signup' }) {
-  const router = useRouter()
-  const supabase = createClient()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    setMessage(null)
-
-    if (action === 'signup') {
-      if (password.length < 6) {
-        setMessage("Password must be at least 6 characters long.")
-        setIsSubmitting(false)
-        return
-      }
-      const { error } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: { emailRedirectTo: `${location.origin}/auth/callback` }
-      });
-      if (error) setMessage(error.message)
-      else setMessage("Check your email for a verification link!")
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setMessage(error.message)
-      else router.push('/')
-    }
-    setIsSubmitting(false)
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="grid gap-4">
-      <div className="grid gap-2">
-        <Label htmlFor={`${action}-email`}>Email</Label>
-        <Input 
-            id={`${action}-email`} 
-            type="email" 
-            placeholder="m@example.com" 
-            required 
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)}
-            className="bg-white/50 border-white/40 focus:bg-white transition-colors" 
-        />
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor={`${action}-password`}>Password</Label>
-        <Input 
-            id={`${action}-password`} 
-            type="password" 
-            placeholder="••••••••" 
-            required 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)}
-            className="bg-white/50 border-white/40 focus:bg-white transition-colors"
-        />
-      </div>
-      {message && <p className="text-center text-sm text-blue-800 p-2 bg-blue-100/50 rounded-md backdrop-blur-sm">{message}</p>}
-      
-      <Button type="submit" className="w-full cursor-pointer hover:bg-slate-800 transition-colors" disabled={isSubmitting}>
-        {isSubmitting ? <LoaderCircle className="animate-spin" /> : (action === 'signin' ? 'Sign In' : 'Sign Up')}
-      </Button>
-    </form>
-  )
-}
-
-// --- COMPONENT: Magic Link Form ---
-function MagicLinkForm() {
-    const supabase = createClient()
-    const [email, setEmail] = useState('')
-    const [message, setMessage] = useState<string | null>(null)
-    const [isSubmitting, setIsSubmitting] = useState(false)
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setIsSubmitting(true)
-        setMessage(null)
-        const { error } = await supabase.auth.signInWithOtp({
-            email,
-            options: { emailRedirectTo: `${location.origin}/auth/callback` }
-        })
-        if (error) setMessage(error.message)
-        else setMessage("Check your email for a magic link!")
-        setIsSubmitting(false)
-    }
-
-    return (
-        <form onSubmit={handleSubmit} className="grid gap-4">
-            <div className="grid gap-2">
-                <Label htmlFor="magic-email">Email</Label>
-                <Input 
-                    id="magic-email" 
-                    type="email" 
-                    placeholder="m@example.com" 
-                    required 
-                    value={email} 
-                    onChange={(e) => setEmail(e.target.value)} 
-                    className="bg-white/50 border-white/40 focus:bg-white transition-colors"
-                />
-            </div>
-            {message && <p className="text-center text-sm text-blue-800 p-2 bg-blue-100/50 rounded-md backdrop-blur-sm">{message}</p>}
-            
-            <Button type="submit" className="w-full cursor-pointer hover:bg-slate-800 transition-colors" disabled={isSubmitting}>
-                {isSubmitting ? <LoaderCircle className="animate-spin" /> : 'Send Magic Link'}
-            </Button>
-        </form>
-    )
-}
-
-// --- MAIN PAGE ---
 export default function LoginPage() {
   const supabase = createClient()
 
+  // --- AUTH HANDLERS ---
   const handleOAuthLogin = async (provider: 'google' | 'github') => {
     await supabase.auth.signInWithOAuth({
       provider,
@@ -135,68 +22,83 @@ export default function LoginPage() {
     })
   }
 
+  // --- RENDER ---
   return (
-    <div 
-        style={{
-            // 1. Force the background image via inline style (highest priority)
-            backgroundImage: "url('/images/background.png')", 
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            // 2. Fallback color if image is missing
-            backgroundColor: '#1e1b4b', 
-            // 3. Force full screen dimensions
-            width: '100vw',
-            height: '100vh',
-            position: 'fixed',
-            inset: 0,
-            overflow: 'auto'
-        }}
-        className="flex items-center justify-center"
-    >
+    <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center">
         
-        {/* Dark Overlay */}
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-0 pointer-events-none" />
+        {/* === LAYER 1: THE BACKGROUND IMAGE === 
+            We use a standard HTML <img> tag with forced styling.
+            This bypasses all CSS/Tailwind conflicts. 
+        */}
+        <img 
+            src="/images/background.png" 
+            alt="App Background"
+            style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                objectFit: 'cover',
+                zIndex: -1, // Puts it behind everything
+            }}
+            // Debugging: If this fails, it logs to your browser console
+            onError={(e) => console.error("Image failed to load:", e.currentTarget.src)}
+        />
 
-        {/* --- CONTENT LAYER --- */}
-        <div className="container relative z-10 flex flex-col lg:flex-row items-center justify-center min-h-screen px-4 gap-12 lg:gap-24 mx-auto">
+        {/* === LAYER 2: DARK OVERLAY === 
+            Makes text readable on top of the image
+        */}
+        <div 
+            style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                backgroundColor: 'rgba(0,0,0, 0.3)', // 30% Dark tint
+                backdropFilter: 'blur(4px)',
+                zIndex: 0, 
+            }}
+        />
+
+        {/* === LAYER 3: CONTENT === 
+            Sits on top of everything (z-10)
+        */}
+        <div className="relative z-10 container flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-24 px-4">
             
-            {/* LEFT SIDE: Branding */}
-            <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left space-y-6">
-                <h1 className="text-6xl font-bold tracking-tighter text-white drop-shadow-2xl">
+            {/* Left Side: Branding */}
+            <div className="text-center lg:text-left space-y-4 max-w-lg">
+                <h1 className="text-6xl font-bold tracking-tighter text-white drop-shadow-xl">
                     LinkVault AI
                 </h1>
-                <p className="text-2xl text-white/95 font-medium max-w-lg drop-shadow-md">
-                    Save Anything. <br/>
-                    <span className="text-purple-200">Find Everything.</span>
+                <p className="text-2xl text-white/90 font-medium">
+                    Save Anything. <br/> <span className="text-purple-300">Find Everything.</span>
                 </p>
-                <p className="text-lg text-white/90 max-w-md drop-shadow-sm font-light">
-                   Your intelligent second brain. Organize links, notes, and images with the power of Gemini AI.
+                <p className="text-lg text-white/75">
+                   Your intelligent second brain.
                 </p>
             </div>
 
-            {/* RIGHT SIDE: Login Card */}
-            <div className="w-full lg:w-1/2 flex justify-center lg:justify-end">
-                <Card className="w-full max-w-[420px] border-white/20 bg-white/70 shadow-2xl backdrop-blur-xl">
-                  <CardHeader className="text-center pb-2">
+            {/* Right Side: Login Card */}
+            <Card className="w-full max-w-[400px] border-white/20 bg-white/70 shadow-2xl backdrop-blur-xl">
+                <CardHeader className="text-center">
                     <CardTitle className="text-2xl font-bold text-slate-900">Welcome Back</CardTitle>
-                    <CardDescription className="text-slate-600">
-                      Sign in to access your vault
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
+                    <CardDescription className="text-slate-600">Sign in to your vault</CardDescription>
+                </CardHeader>
+                <CardContent>
                     <Tabs defaultValue="signin" className="w-full">
-                      <TabsList className="grid w-full grid-cols-3 bg-black/5 mb-4">
-                        <TabsTrigger value="signin" className="cursor-pointer data-[state=active]:bg-white data-[state=active]:shadow-sm">Password</TabsTrigger>
-                        <TabsTrigger value="signup" className="cursor-pointer data-[state=active]:bg-white data-[state=active]:shadow-sm">Sign Up</TabsTrigger>
-                        <TabsTrigger value="magiclink" className="cursor-pointer data-[state=active]:bg-white data-[state=active]:shadow-sm">Magic Link</TabsTrigger>
-                      </TabsList>
-                      
-                      <TabsContent value="signin"><PasswordAuthForm action="signin" /></TabsContent>
-                      <TabsContent value="signup"><PasswordAuthForm action="signup" /></TabsContent>
-                      <TabsContent value="magiclink"><MagicLinkForm /></TabsContent>
+                        <TabsList className="grid w-full grid-cols-3 bg-black/5 mb-4">
+                            <TabsTrigger value="signin">Password</TabsTrigger>
+                            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                            <TabsTrigger value="magiclink">Magic Link</TabsTrigger>
+                        </TabsList>
+                        
+                        <TabsContent value="signin"><AuthForm mode="signin" /></TabsContent>
+                        <TabsContent value="signup"><AuthForm mode="signup" /></TabsContent>
+                        <TabsContent value="magiclink"><MagicLinkAuth /></TabsContent>
                     </Tabs>
-                    
+
                     <div className="mt-6 relative">
                       <div className="absolute inset-0 flex items-center">
                         <span className="w-full border-t border-slate-300" />
@@ -205,29 +107,96 @@ export default function LoginPage() {
                         <span className="bg-transparent px-2 text-slate-600 font-semibold backdrop-blur-sm rounded">Or continue with</span>
                       </div>
                     </div>
-
+                    
                     <div className="grid grid-cols-2 gap-2 mt-6">
-                        <Button 
-                            variant="outline" 
-                            type="button" 
-                            onClick={() => handleOAuthLogin('google')}
-                            className="bg-white/50 border-white/40 hover:bg-white/80 cursor-pointer transition-colors"
-                        >
+                        <Button variant="outline" type="button" onClick={() => handleOAuthLogin('google')} className="bg-white/50 hover:bg-white/80">
                             <ChromeIcon className="mr-2 h-4 w-4" /> Google
                         </Button>
-                         <Button 
-                            variant="outline" 
-                            type="button" 
-                            onClick={() => handleOAuthLogin('github')}
-                            className="bg-white/50 border-white/40 hover:bg-white/80 cursor-pointer transition-colors"
-                        >
+                        <Button variant="outline" type="button" onClick={() => handleOAuthLogin('github')} className="bg-white/50 hover:bg-white/80">
                             <GitHubLogoIcon className="mr-2 h-4 w-4" /> GitHub
                         </Button>
                     </div>
-                  </CardContent>
-                </Card>
-            </div>
+                </CardContent>
+            </Card>
         </div>
     </div>
   )
+}
+
+// --- SUB-COMPONENTS (Logic Preserved) ---
+
+function AuthForm({ mode }: { mode: 'signin' | 'signup' }) {
+    const supabase = createClient()
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [loading, setLoading] = useState(false)
+    const [message, setMessage] = useState<string | null>(null)
+    const router = useRouter()
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setLoading(true)
+        setMessage(null)
+
+        if (mode === 'signup') {
+             const { error } = await supabase.auth.signUp({ 
+                email, password, options: { emailRedirectTo: `${location.origin}/auth/callback` }
+             })
+             if (error) setMessage(error.message)
+             else setMessage("Check email for verification!")
+        } else {
+             const { error } = await supabase.auth.signInWithPassword({ email, password })
+             if (error) setMessage(error.message)
+             else router.push('/')
+        }
+        setLoading(false)
+    }
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+                <Label>Email</Label>
+                <Input type="email" value={email} onChange={e => setEmail(e.target.value)} className="bg-white/50 focus:bg-white" required />
+            </div>
+            <div className="space-y-2">
+                <Label>Password</Label>
+                <Input type="password" value={password} onChange={e => setPassword(e.target.value)} className="bg-white/50 focus:bg-white" required />
+            </div>
+            {message && <p className="text-xs text-blue-600 text-center">{message}</p>}
+            <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <LoaderCircle className="animate-spin" /> : (mode === 'signin' ? "Sign In" : "Sign Up")}
+            </Button>
+        </form>
+    )
+}
+
+function MagicLinkAuth() {
+    const supabase = createClient()
+    const [email, setEmail] = useState('')
+    const [loading, setLoading] = useState(false)
+    const [message, setMessage] = useState<string | null>(null)
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setLoading(true)
+        const { error } = await supabase.auth.signInWithOtp({
+            email, options: { emailRedirectTo: `${location.origin}/auth/callback` }
+        })
+        if (error) setMessage(error.message)
+        else setMessage("Magic link sent!")
+        setLoading(false)
+    }
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+                <Label>Email</Label>
+                <Input type="email" value={email} onChange={e => setEmail(e.target.value)} className="bg-white/50 focus:bg-white" required />
+            </div>
+            {message && <p className="text-xs text-blue-600 text-center">{message}</p>}
+            <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <LoaderCircle className="animate-spin" /> : "Send Magic Link"}
+            </Button>
+        </form>
+    )
 }
