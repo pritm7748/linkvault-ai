@@ -12,7 +12,8 @@ export default async function VaultPage() {
   ] = await Promise.all([
     supabase
       .from('vault_items')
-      .select('id, processed_title, processed_summary, processed_tags, is_favorited')
+      // --- ADDED 'content_type' to this list ---
+      .select('id, processed_title, processed_summary, processed_tags, is_favorited, content_type, created_at')
       .order('is_favorited', { ascending: false })
       .order('created_at', { ascending: false }),
     supabase
@@ -22,8 +23,6 @@ export default async function VaultPage() {
   ]);
 
   return (
-    // FIX: Reduced padding. Layout already provides p-4/p-8. 
-    // We just need a tiny bit of space between search bar and title.
     <div className="flex flex-col gap-4"> 
       <div className="flex items-center justify-between">
         <h1 className="text-2xl md:text-3xl font-serif font-bold text-stone-900">My Vault</h1>

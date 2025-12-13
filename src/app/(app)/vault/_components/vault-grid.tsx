@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { MoreHorizontal, Trash2, Edit, FolderInput, Star, LogOut } from 'lucide-react'
+import { MoreHorizontal, Trash2, Edit, FolderInput, Star, LogOut, Video, Link2, FileText, Image as ImageIcon } from 'lucide-react'
 import { ItemDetailsDialog } from './item-details-dialog'
 import { MoveToCollectionDialog } from './move-to-collection-dialog'
 
@@ -31,6 +31,7 @@ type VaultItem = {
   processed_summary: string | null; 
   processed_tags: string[] | null; 
   is_favorited: boolean;
+  content_type: string; // Added content_type
 };
 type Collection = { id: number; name: string };
 
@@ -55,6 +56,16 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
   const router = useRouter();
   const pathname = usePathname();
   const isInCollectionView = pathname.includes('/collections/');
+
+  // Helper to get color/icon based on type
+  const getTypeStyles = (type: string) => {
+    switch (type) {
+        case 'video': return { color: 'border-t-red-500', icon: <Video className="h-3 w-3 text-red-500" /> };
+        case 'link': return { color: 'border-t-blue-500', icon: <Link2 className="h-3 w-3 text-blue-500" /> };
+        case 'image': return { color: 'border-t-purple-500', icon: <ImageIcon className="h-3 w-3 text-purple-500" /> };
+        default: return { color: 'border-t-amber-500', icon: <FileText className="h-3 w-3 text-amber-500" /> };
+    }
+  }
 
   const handleOpenDetails = (id: number) => { 
     if (selectedItems.length > 0) return;
@@ -196,13 +207,18 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {items.map((item) => {
             const isSelected = selectedItems.includes(item.id);
+            const typeStyle = getTypeStyles(item.content_type); // Get visual type color
+
             return (
               <Card 
                 key={item.id} 
-                className={`bg-white border-stone-200 shadow-sm flex flex-col transition-all relative group ${isSelected ? 'ring-2 ring-stone-900 border-transparent shadow-md' : 'hover:shadow-md hover:border-stone-300'}`}
+                className={`bg-white border-stone-200 shadow-sm flex flex-col transition-all relative group 
+                    ${isSelected ? 'ring-2 ring-stone-900 border-transparent shadow-md' : 'hover:shadow-md hover:border-stone-300'}
+                    border-t-4 ${typeStyle.color} /* VISUAL TYPE INDICATOR */
+                `}
               >
                 <div 
-                  className="absolute top-3 left-3 z-10"
+                  className="absolute top-4 left-4 z-10"
                   onClick={(e) => handleSelectItem(e, item.id)}
                 >
                   <Input 
@@ -213,18 +229,23 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
                   />
                 </div>
                 
-                {/* --- FIX: Moved star to right-3 for better placement --- */}
+                {/* FIX: Star moved down slightly (top-4) and cleanly to the right (right-3) */}
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="absolute top-2 right-3 h-8 w-8 rounded-full z-10 cursor-pointer"
+                  className="absolute top-4 right-3 h-8 w-8 rounded-full z-10 cursor-pointer"
                   onClick={(e) => handleToggleFavorite(e, item)}
                 >
                   <Star className={`h-5 w-5 transition-colors ${item.is_favorited ? 'text-amber-400 fill-amber-400' : 'text-stone-300 hover:text-stone-500'}`} />
                 </Button>
 
-                <div className="flex-grow cursor-pointer p-1" onClick={() => handleOpenDetails(item.id)}>
-                  <CardHeader className="pb-2 pt-10"> {/* Added top padding to clear the star/checkbox */}
+                <div className="flex-grow cursor-pointer" onClick={() => handleOpenDetails(item.id)}>
+                  {/* FIX: Removed pt-10. Added pr-12 to ensure text doesn't hit the star. */}
+                  <CardHeader className="pb-2 pr-12">
+                    <div className="flex items-center gap-2 mb-2">
+                        {typeStyle.icon}
+                        <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">{item.content_type}</span>
+                    </div>
                     <CardTitle className="font-serif text-lg font-bold text-stone-900 break-words leading-tight">
                       {item.processed_title || "Untitled Item"}
                     </CardTitle>
@@ -235,10 +256,10 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
                 </div>
                 <CardFooter className="flex justify-between items-center pt-0 pb-4">
                      <div className="flex flex-wrap gap-1">
-                       {item.processed_tags?.slice(0, 2).map((tag: string) => (<span key={tag} className="px-2 py-0.5 bg-stone-100 text-stone-600 text-xs rounded-full border border-stone-200">{tag}</span>))}
+                       {/* FIX: Reverted to 3 tags */}
+                       {item.processed_tags?.slice(0, 3).map((tag: string) => (<span key={tag} className="px-2 py-0.5 bg-stone-100 text-stone-600 text-xs rounded-full border border-stone-200">{tag}</span>))}
                    </div>
                    
-                   {/* --- FIX: Added cursor-pointer to trigger and items --- */}
                    <DropdownMenu>
                      <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-400 hover:text-stone-700 cursor-pointer">
