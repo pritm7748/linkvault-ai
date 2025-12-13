@@ -1,9 +1,8 @@
-// src/app/login/page.tsx
-
 'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image' // Import Next.js Image component
 import { createClient } from '@/lib/supabase/client'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -59,7 +58,7 @@ function PasswordAuthForm({ action }: { action: 'signin' | 'signup' }) {
             required 
             value={email} 
             onChange={(e) => setEmail(e.target.value)}
-            className="bg-white/50 border-white/40 focus:bg-white" 
+            className="bg-white/50 border-white/40 focus:bg-white transition-colors" 
         />
       </div>
       <div className="grid gap-2">
@@ -71,13 +70,12 @@ function PasswordAuthForm({ action }: { action: 'signin' | 'signup' }) {
             required 
             value={password} 
             onChange={(e) => setPassword(e.target.value)}
-            className="bg-white/50 border-white/40 focus:bg-white"
+            className="bg-white/50 border-white/40 focus:bg-white transition-colors"
         />
       </div>
       {message && <p className="text-center text-sm text-blue-800 p-2 bg-blue-100/50 rounded-md backdrop-blur-sm">{message}</p>}
       
-      {/* ADDED: cursor-pointer to Button */}
-      <Button type="submit" className="w-full cursor-pointer hover:bg-slate-800" disabled={isSubmitting}>
+      <Button type="submit" className="w-full cursor-pointer hover:bg-slate-800 transition-colors" disabled={isSubmitting}>
         {isSubmitting ? <LoaderCircle className="animate-spin" /> : (action === 'signin' ? 'Sign In' : 'Sign Up')}
       </Button>
     </form>
@@ -115,13 +113,12 @@ function MagicLinkForm() {
                     required 
                     value={email} 
                     onChange={(e) => setEmail(e.target.value)} 
-                    className="bg-white/50 border-white/40 focus:bg-white"
+                    className="bg-white/50 border-white/40 focus:bg-white transition-colors"
                 />
             </div>
             {message && <p className="text-center text-sm text-blue-800 p-2 bg-blue-100/50 rounded-md backdrop-blur-sm">{message}</p>}
             
-            {/* ADDED: cursor-pointer to Button */}
-            <Button type="submit" className="w-full cursor-pointer hover:bg-slate-800" disabled={isSubmitting}>
+            <Button type="submit" className="w-full cursor-pointer hover:bg-slate-800 transition-colors" disabled={isSubmitting}>
                 {isSubmitting ? <LoaderCircle className="animate-spin" /> : 'Send Magic Link'}
             </Button>
         </form>
@@ -140,26 +137,36 @@ export default function LoginPage() {
   }
 
   return (
-    // FIX: Using CSS background-image instead of Next/Image to prevent "Alt Text" errors
-    <div 
-        className="flex min-h-screen w-full relative overflow-hidden bg-cover bg-center bg-no-repeat bg-slate-900"
-        style={{ backgroundImage: "url('/images/background.png')" }}
-    >
-        {/* Overlay to ensure text readability */}
-        <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] z-0" />
+    <div className="flex min-h-screen w-full relative">
+        
+        {/* --- 1. BACKGROUND IMAGE LAYER (Fixed Position) --- */}
+        <div className="fixed inset-0 z-0">
+             {/* Ensure the file exists at public/images/background.png */}
+            <Image 
+                src="/images/background.png" 
+                alt="Background" 
+                fill 
+                className="object-cover"
+                priority // Forces the image to load immediately
+                quality={100}
+            />
+            {/* Dark Overlay for Readability */}
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
+        </div>
 
+        {/* --- 2. CONTENT LAYER (Sits on top of Z-0) --- */}
         <div className="container relative z-10 flex flex-col lg:flex-row items-center justify-center min-h-screen px-4 gap-12 lg:gap-24 mx-auto">
             
             {/* LEFT SIDE: Branding */}
             <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left space-y-6">
-                <h1 className="text-6xl font-bold tracking-tighter text-white drop-shadow-lg">
+                <h1 className="text-6xl font-bold tracking-tighter text-white drop-shadow-2xl">
                     LinkVault AI
                 </h1>
                 <p className="text-2xl text-white/95 font-medium max-w-lg drop-shadow-md">
                     Save Anything. <br/>
                     <span className="text-purple-200">Find Everything.</span>
                 </p>
-                <p className="text-lg text-white/80 max-w-md drop-shadow-sm">
+                <p className="text-lg text-white/90 max-w-md drop-shadow-sm font-light">
                    Your intelligent second brain. Organize links, notes, and images with the power of Gemini AI.
                 </p>
             </div>
@@ -175,7 +182,7 @@ export default function LoginPage() {
                   </CardHeader>
                   <CardContent>
                     <Tabs defaultValue="signin" className="w-full">
-                      {/* ADDED: cursor-pointer to TabsTrigger */}
+                      {/* Added explicit cursor-pointer */}
                       <TabsList className="grid w-full grid-cols-3 bg-black/5 mb-4">
                         <TabsTrigger value="signin" className="cursor-pointer data-[state=active]:bg-white data-[state=active]:shadow-sm">Password</TabsTrigger>
                         <TabsTrigger value="signup" className="cursor-pointer data-[state=active]:bg-white data-[state=active]:shadow-sm">Sign Up</TabsTrigger>
@@ -197,12 +204,11 @@ export default function LoginPage() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 mt-6">
-                        {/* ADDED: cursor-pointer to Social Buttons */}
                         <Button 
                             variant="outline" 
                             type="button" 
                             onClick={() => handleOAuthLogin('google')}
-                            className="bg-white/50 border-white/40 hover:bg-white/80 cursor-pointer"
+                            className="bg-white/50 border-white/40 hover:bg-white/80 cursor-pointer transition-colors"
                         >
                             <ChromeIcon className="mr-2 h-4 w-4" /> Google
                         </Button>
@@ -210,7 +216,7 @@ export default function LoginPage() {
                             variant="outline" 
                             type="button" 
                             onClick={() => handleOAuthLogin('github')}
-                            className="bg-white/50 border-white/40 hover:bg-white/80 cursor-pointer"
+                            className="bg-white/50 border-white/40 hover:bg-white/80 cursor-pointer transition-colors"
                         >
                             <GitHubLogoIcon className="mr-2 h-4 w-4" /> GitHub
                         </Button>
