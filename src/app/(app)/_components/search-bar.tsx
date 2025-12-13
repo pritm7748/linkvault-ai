@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Textarea } from '@/components/ui/textarea' // Changed from Input to Textarea
+import { Input } from '@/components/ui/input' // Restore Input for Desktop
+import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Search, Wand2 } from 'lucide-react'
 import { QandADialog } from './q-and-a-dialog'
@@ -31,27 +32,29 @@ export function SearchBar() {
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  // --- Auto-Resize Logic ---
+  // --- Auto-Resize Logic (Mobile Only) ---
   useEffect(() => {
     if (textareaRef.current) {
-      // Reset height to calculate scrollHeight correctly
       textareaRef.current.style.height = '40px'; 
-      // Set new height based on content, capped at ~120px (approx 5 lines)
       const scrollHeight = textareaRef.current.scrollHeight;
       textareaRef.current.style.height = `${Math.min(scrollHeight, 120)}px`;
     }
   }, [query]);
 
   const executeSearch = () => {
-    if (!query.trim()) return; // Prevent empty searches
+    if (!query.trim()) return;
     router.push(`/search?q=${encodeURIComponent(query)}`);
   };
 
-  // --- Handle Enter Key ---
-  // Enter = Submit, Shift+Enter = New Line
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault(); // Prevent new line
+  // --- Handle Key Presses (Works for both Input and Textarea) ---
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+    // For Textarea: Enter submits, Shift+Enter adds newline
+    // For Input: Enter submits
+    if (event.key === 'Enter') {
+      if (event.target instanceof HTMLTextAreaElement && event.shiftKey) {
+        return; // Allow new line on mobile textarea
+      }
+      event.preventDefault();
       executeSearch();
     }
   };
@@ -95,19 +98,28 @@ export function SearchBar() {
     <>
       <div className="w-full flex items-end gap-2">
         <div className="relative flex-grow">
-          {/* Icon stays fixed at the top-left */}
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+          {/* Icon - Absolute positioning works for both inputs */}
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 md:top-3 md:translate-y-0 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
           
+          {/* --- 1. DESKTOP INPUT (Hidden on Mobile) --- */}
+          {/* Restores the clean, single-line look for desktop users */}
+          <Input
+            type="search"
+            name="query"
+            placeholder="Search your vault or ask a question..."
+            className="hidden md:block w-full bg-background pl-9 shadow-none h-10"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+
+          {/* --- 2. MOBILE TEXTAREA (Hidden on Desktop) --- */}
+          {/* Keeps the auto-growing feature for mobile users */}
           <Textarea
             ref={textareaRef}
             name="query"
-            placeholder="Search your vault or ask a question..."
-            // Classes Breakdown:
-            // min-h-[40px]: Matches button height
-            // text-base: 16px font size on mobile (prevents iOS zoom)
-            // md:text-sm: Smaller font on desktop
-            // resize-none: Hides the manual resize handle
-            className="w-full min-h-[40px] max-h-[120px] resize-none overflow-y-auto bg-background pl-9 pr-4 py-[9px] shadow-none rounded-md border-input focus-visible:ring-1 focus-visible:ring-ring text-base md:text-sm leading-tight transition-all"
+            placeholder="Search..."
+            className="md:hidden w-full min-h-[40px] max-h-[120px] resize-none overflow-y-auto bg-background pl-9 pr-4 py-[9px] shadow-none rounded-md border-input focus-visible:ring-1 focus-visible:ring-ring text-base leading-tight transition-all"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
