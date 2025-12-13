@@ -24,11 +24,9 @@ export function CreateItemDialog() {
     setMessage(null)
 
     const formData = new FormData(event.currentTarget)
-    // Ensure the contentType matches the active tab
     formData.append('contentType', activeTab)
 
     try {
-      // We preserve your existing API route logic
       const response = await fetch('/api/process', {
         method: 'POST',
         body: formData,
@@ -39,10 +37,8 @@ export function CreateItemDialog() {
         throw new Error(result.error || 'An unknown error occurred.')
       }
       
-      // Success: Close modal, Refresh data, Reset form
       setIsOpen(false)
       router.refresh() 
-      // Optional: You could show a toast here
 
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -55,7 +51,6 @@ export function CreateItemDialog() {
     }
   }
 
-  // Reset state when opening/closing
   const onOpenChange = (open: boolean) => {
     setIsOpen(open)
     if (!open) {
@@ -67,8 +62,8 @@ export function CreateItemDialog() {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        {/* The New Trigger Button */}
-        <Button className="w-full justify-start gap-2 bg-stone-900 hover:bg-stone-800 text-white shadow-sm mb-4">
+        {/* ADDED: cursor-pointer to ensure the hand icon appears on hover */}
+        <Button className="w-full justify-start gap-2 bg-stone-900 hover:bg-stone-800 text-white shadow-sm mb-4 cursor-pointer">
             <Plus className="h-4 w-4" /> New Item
         </Button>
       </DialogTrigger>
@@ -79,16 +74,14 @@ export function CreateItemDialog() {
         
         <Tabs defaultValue="link" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4 bg-stone-100 p-1">
-            <TabsTrigger value="link" className="data-[state=active]:bg-white data-[state=active]:shadow-sm"><LinkIcon className="h-4 w-4" /></TabsTrigger>
-            <TabsTrigger value="note" className="data-[state=active]:bg-white data-[state=active]:shadow-sm"><FileText className="h-4 w-4" /></TabsTrigger>
-            <TabsTrigger value="image" className="data-[state=active]:bg-white data-[state=active]:shadow-sm"><ImageIcon className="h-4 w-4" /></TabsTrigger>
-            <TabsTrigger value="video" className="data-[state=active]:bg-white data-[state=active]:shadow-sm"><Video className="h-4 w-4" /></TabsTrigger>
+            <TabsTrigger value="link" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer"><LinkIcon className="h-4 w-4" /></TabsTrigger>
+            <TabsTrigger value="note" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer"><FileText className="h-4 w-4" /></TabsTrigger>
+            <TabsTrigger value="image" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer"><ImageIcon className="h-4 w-4" /></TabsTrigger>
+            <TabsTrigger value="video" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer"><Video className="h-4 w-4" /></TabsTrigger>
           </TabsList>
 
-          {/* SHARED FORM LOGIC: The form wraps the tabs so one submit handler works for all */}
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
             
-            {/* LINK FORM */}
             <TabsContent value="link" className="space-y-4 mt-0">
                 <div className="space-y-2">
                     <Label>Website URL</Label>
@@ -97,7 +90,6 @@ export function CreateItemDialog() {
                 </div>
             </TabsContent>
 
-            {/* NOTE FORM */}
             <TabsContent value="note" className="space-y-4 mt-0">
                 <div className="space-y-2">
                     <Label>Your Note</Label>
@@ -105,7 +97,6 @@ export function CreateItemDialog() {
                 </div>
             </TabsContent>
 
-            {/* IMAGE FORM */}
             <TabsContent value="image" className="space-y-4 mt-0">
                 <div className="space-y-2">
                     <Label>Upload Image</Label>
@@ -113,7 +104,6 @@ export function CreateItemDialog() {
                 </div>
             </TabsContent>
 
-            {/* VIDEO FORM */}
             <TabsContent value="video" className="space-y-4 mt-0">
                 <div className="space-y-2">
                     <Label>YouTube URL</Label>
@@ -122,15 +112,13 @@ export function CreateItemDialog() {
                 </div>
             </TabsContent>
 
-            {/* ERROR MESSAGE DISPLAY */}
             {message && (
                 <div className={`text-sm p-3 rounded-md flex items-center gap-2 ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
                     {message.text}
                 </div>
             )}
 
-            {/* SUBMIT BUTTON */}
-            <Button type="submit" disabled={isLoading} className="w-full bg-stone-900 hover:bg-stone-800">
+            <Button type="submit" disabled={isLoading} className="w-full bg-stone-900 hover:bg-stone-800 cursor-pointer">
                 {isLoading ? <LoaderCircle className="animate-spin mr-2 h-4 w-4" /> : "Save to Vault"}
             </Button>
           </form>
