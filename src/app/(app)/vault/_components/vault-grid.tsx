@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react' // Ensure useEffect is imported
+import { useState, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -37,13 +37,9 @@ type Collection = { id: number; name: string };
 export function VaultGrid({ initialItems, collections }: { initialItems: VaultItem[], collections: Collection[] }) {
   const [items, setItems] = useState(initialItems)
   
-  // --- THE FIX START ---
-  // This ensures the grid updates instantly when you add an item
-  // or when router.refresh() fetches new data.
   useEffect(() => {
     setItems(initialItems)
   }, [initialItems])
-  // --- THE FIX END ---
 
   const [isDeleting, setIsDeleting] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<number | null>(null)
@@ -103,7 +99,7 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
         });
       }
       setItems(items.filter((item) => !idsToDelete.includes(item.id)));
-      router.refresh(); // Refresh server data to match UI
+      router.refresh();
     } catch (error) { 
       console.error(error) 
     } finally { 
@@ -181,17 +177,18 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
   return (
     <>
       {selectedItems.length > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white rounded-lg shadow-2xl p-2 flex items-center gap-4">
-          <p className="text-sm font-medium">{selectedItems.length} item(s) selected</p>
-          <Button variant="secondary" size="sm" onClick={() => handleOpenMoveDialog(null)}>Move</Button>
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-stone-900 text-white rounded-full shadow-xl p-2 px-6 flex items-center gap-4 animate-in slide-in-from-bottom-4">
+          <p className="text-sm font-medium">{selectedItems.length} selected</p>
+          <div className="h-4 w-px bg-white/20" />
+          <Button variant="ghost" size="sm" onClick={() => handleOpenMoveDialog(null)} className="text-white hover:text-white hover:bg-white/20 h-8">Move</Button>
 
           {isInCollectionView ? (
-            <Button variant="destructive" size="sm" onClick={handleBulkRemoveFromCollection}>Remove</Button>
+            <Button variant="ghost" size="sm" onClick={handleBulkRemoveFromCollection} className="text-red-300 hover:text-red-200 hover:bg-red-900/30 h-8">Remove</Button>
           ) : (
-            <Button variant="destructive" size="sm" onClick={() => setItemToDelete(1)}>Delete</Button>
+            <Button variant="ghost" size="sm" onClick={() => setItemToDelete(1)} className="text-red-300 hover:text-red-200 hover:bg-red-900/30 h-8">Delete</Button>
           )}
 
-          <Button variant="ghost" size="sm" onClick={() => setSelectedItems([])}>Clear</Button>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedItems([])} className="text-white/50 hover:text-white hover:bg-transparent h-8">X</Button>
         </div>
       )}
 
@@ -202,56 +199,67 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
             return (
               <Card 
                 key={item.id} 
-                className={`bg-white border-slate-200 shadow-sm flex flex-col transition-all relative group ${isSelected ? 'shadow-lg border-blue-500' : 'hover:shadow-lg hover:-translate-y-1'}`}
+                className={`bg-white border-stone-200 shadow-sm flex flex-col transition-all relative group ${isSelected ? 'ring-2 ring-stone-900 border-transparent shadow-md' : 'hover:shadow-md hover:border-stone-300'}`}
               >
                 <div 
-                  className="absolute top-2 left-2 z-10"
+                  className="absolute top-3 left-3 z-10"
                   onClick={(e) => handleSelectItem(e, item.id)}
                 >
                   <Input 
                     type="checkbox" 
-                    className={`h-5 w-5 cursor-pointer ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                    className={`h-5 w-5 cursor-pointer rounded border-stone-300 ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 transition-opacity'}`}
                     checked={isSelected}
                     readOnly
                   />
                 </div>
                 
+                {/* --- FIX: Moved star to right-3 for better placement --- */}
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="absolute top-2 right-12 h-8 w-8 rounded-full z-10"
+                  className="absolute top-2 right-3 h-8 w-8 rounded-full z-10 cursor-pointer"
                   onClick={(e) => handleToggleFavorite(e, item)}
                 >
-                  <Star className={`h-5 w-5 transition-colors ${item.is_favorited ? 'text-yellow-400 fill-yellow-400' : 'text-slate-300 hover:text-slate-500'}`} />
+                  <Star className={`h-5 w-5 transition-colors ${item.is_favorited ? 'text-amber-400 fill-amber-400' : 'text-stone-300 hover:text-stone-500'}`} />
                 </Button>
 
-                <div className="flex-grow cursor-pointer" onClick={() => handleOpenDetails(item.id)}>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="font-serif text-lg font-semibold text-card-foreground break-words pr-10">
-                      {item.processed_title || "Untitled"}
+                <div className="flex-grow cursor-pointer p-1" onClick={() => handleOpenDetails(item.id)}>
+                  <CardHeader className="pb-2 pt-10"> {/* Added top padding to clear the star/checkbox */}
+                    <CardTitle className="font-serif text-lg font-bold text-stone-900 break-words leading-tight">
+                      {item.processed_title || "Untitled Item"}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-muted-foreground line-clamp-4">{item.processed_summary || "No summary."}</p>
+                    <p className="text-sm text-stone-500 line-clamp-4 leading-relaxed">{item.processed_summary || "No summary available."}</p>
                   </CardContent>
                 </div>
-                <CardFooter className="flex justify-between items-center">
+                <CardFooter className="flex justify-between items-center pt-0 pb-4">
                      <div className="flex flex-wrap gap-1">
-                       {item.processed_tags?.slice(0, 3).map((tag: string) => (<span key={tag} className="px-2 py-1 bg-secondary text-secondary-foreground text-xs rounded-full">{tag}</span>))}
+                       {item.processed_tags?.slice(0, 2).map((tag: string) => (<span key={tag} className="px-2 py-0.5 bg-stone-100 text-stone-600 text-xs rounded-full border border-stone-200">{tag}</span>))}
                    </div>
+                   
+                   {/* --- FIX: Added cursor-pointer to trigger and items --- */}
                    <DropdownMenu>
-                     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-6 w-6"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                     <DropdownMenuContent align="end">
-                       <DropdownMenuItem onClick={() => handleOpenDetails(item.id)} className="cursor-pointer"><Edit className="mr-2 h-4 w-4" />View / Edit</DropdownMenuItem>
-                       <DropdownMenuItem onClick={() => handleOpenMoveDialog(item.id)} className="cursor-pointer"><FolderInput className="mr-2 h-4 w-4" />Move to...</DropdownMenuItem>
+                     <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-400 hover:text-stone-700 cursor-pointer">
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                     </DropdownMenuTrigger>
+                     <DropdownMenuContent align="end" className="w-48">
+                       <DropdownMenuItem onClick={() => handleOpenDetails(item.id)} className="cursor-pointer font-medium text-stone-700">
+                            <Edit className="mr-2 h-4 w-4" /> View / Edit
+                        </DropdownMenuItem>
+                       <DropdownMenuItem onClick={() => handleOpenMoveDialog(item.id)} className="cursor-pointer font-medium text-stone-700">
+                            <FolderInput className="mr-2 h-4 w-4" /> Move to...
+                        </DropdownMenuItem>
 
                        {isInCollectionView ? (
-                          <DropdownMenuItem onClick={() => handleRemoveFromCollection(item.id)} className="text-orange-600 cursor-pointer focus:bg-orange-50 focus:text-orange-700">
-                              <LogOut className="mr-2 h-4 w-4" />Remove from Collection
+                          <DropdownMenuItem onClick={() => handleRemoveFromCollection(item.id)} className="text-amber-700 cursor-pointer focus:bg-amber-50 focus:text-amber-800">
+                              <LogOut className="mr-2 h-4 w-4" /> Remove from Collection
                           </DropdownMenuItem>
                        ) : (
-                          <DropdownMenuItem onClick={() => setItemToDelete(item.id)} className="text-red-500 cursor-pointer focus:bg-red-50 focus:text-red-700">
-                              <Trash2 className="mr-2 h-4 w-4" />Delete
+                          <DropdownMenuItem onClick={() => setItemToDelete(item.id)} className="text-red-600 cursor-pointer focus:bg-red-50 focus:text-red-700">
+                              <Trash2 className="mr-2 h-4 w-4" /> Delete
                           </DropdownMenuItem>
                        )}
                      </DropdownMenuContent>
@@ -261,7 +269,15 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
             )
           })}
         </div>
-      ) : ( <div className="text-center py-16 border-2 border-dashed rounded-lg bg-background"><h3 className="font-serif text-xl font-semibold">This space is empty.</h3><p className="text-muted-foreground mt-2">Add some items to get started.</p></div> )}
+      ) : ( 
+        <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-stone-200 rounded-lg bg-stone-50/50">
+            <div className="bg-stone-100 p-4 rounded-full mb-4">
+                <FolderInput className="h-8 w-8 text-stone-400" />
+            </div>
+            <h3 className="font-serif text-xl font-semibold text-stone-900">Your vault is empty</h3>
+            <p className="text-stone-500 mt-2 max-w-sm">Use the "New Item" button to start capturing your links, notes, and ideas.</p>
+        </div> 
+      )}
             
       <ItemDetailsDialog itemId={selectedItemId} isOpen={isDetailsOpen} onClose={handleCloseDetails} onUpdate={handleItemUpdate} />
       <MoveToCollectionDialog 
@@ -278,8 +294,8 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
                 <AlertDialogDescription>This action cannot be undone and will permanently delete the selected item(s).</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-red-600 hover:bg-red-700">{isDeleting ? 'Deleting...' : 'Delete'}</AlertDialogAction>
+                <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 text-white cursor-pointer">{isDeleting ? 'Deleting...' : 'Delete'}</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

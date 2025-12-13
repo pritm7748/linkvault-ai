@@ -6,7 +6,6 @@ export default async function VaultPage() {
   const cookieStore = cookies()
   const supabase = createServer(cookieStore)
   
-  // Fetch both items and collections
   const [
     { data: items },
     { data: collections }
@@ -14,7 +13,6 @@ export default async function VaultPage() {
     supabase
       .from('vault_items')
       .select('id, processed_title, processed_summary, processed_tags, is_favorited')
-      // --- THE FIX: Sort by favorites first, then by creation date ---
       .order('is_favorited', { ascending: false })
       .order('created_at', { ascending: false }),
     supabase
@@ -24,9 +22,13 @@ export default async function VaultPage() {
   ]);
 
   return (
-    <div className="py-6">
-      <h1 className="text-3xl font-bold mb-6">My Vault</h1>
-      {/* Pass both items and collections to the grid component */}
+    // FIX: Reduced padding. Layout already provides p-4/p-8. 
+    // We just need a tiny bit of space between search bar and title.
+    <div className="flex flex-col gap-4"> 
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl md:text-3xl font-serif font-bold text-stone-900">My Vault</h1>
+      </div>
+      
       <VaultGrid initialItems={items || []} collections={collections || []} />
     </div>
   )
