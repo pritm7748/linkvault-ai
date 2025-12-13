@@ -4,6 +4,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image' // --- IMPORT NEXT IMAGE ---
 import { createClient } from '@/lib/supabase/client'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChromeIcon, LoaderCircle } from 'lucide-react' 
 import { GitHubLogoIcon } from '@radix-ui/react-icons'
 
-// --- COMPONENT: Password Form (Logic Preserved) ---
+// --- COMPONENT: Password Form ---
 function PasswordAuthForm({ action }: { action: 'signin' | 'signup' }) {
   const router = useRouter()
   const supabase = createClient()
@@ -82,7 +83,7 @@ function PasswordAuthForm({ action }: { action: 'signin' | 'signup' }) {
   )
 }
 
-// --- COMPONENT: Magic Link Form (Logic Preserved) ---
+// --- COMPONENT: Magic Link Form ---
 function MagicLinkForm() {
     const supabase = createClient()
     const [email, setEmail] = useState('')
@@ -136,31 +137,38 @@ export default function LoginPage() {
   }
 
   return (
-    // MAIN CONTAINER: Full screen, Background Image, Flex Layout
-    <div 
-        className="flex min-h-screen w-full bg-cover bg-center bg-no-repeat relative"
-        style={{ backgroundImage: "url('/images/background.png')" }}
-    >
-        {/* Dark overlay for readability */}
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] z-0" />
+    <div className="flex min-h-screen w-full relative overflow-hidden">
+        {/* --- BACKGROUND IMAGE (Fixed) --- */}
+        <div className="absolute inset-0 z-0">
+            <Image 
+                src="/images/background.png" 
+                alt="Background" 
+                fill 
+                className="object-cover object-center"
+                priority
+            />
+            {/* Overlay to ensure text readability */}
+            <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" />
+        </div>
 
-        <div className="container relative z-10 flex flex-col lg:flex-row items-center justify-center min-h-screen px-4 gap-12 lg:gap-24">
+        {/* --- CONTENT (Z-Index ensures it sits on top) --- */}
+        <div className="container relative z-10 flex flex-col lg:flex-row items-center justify-center min-h-screen px-4 gap-12 lg:gap-24 mx-auto">
             
-            {/* LEFT SIDE: Branding & Tagline */}
+            {/* LEFT SIDE: Branding */}
             <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left space-y-6">
-                <h1 className="text-6xl font-bold tracking-tighter text-white drop-shadow-md">
+                <h1 className="text-6xl font-bold tracking-tighter text-white drop-shadow-lg">
                     LinkVault AI
                 </h1>
-                <p className="text-2xl text-white/90 font-medium max-w-lg drop-shadow-sm">
+                <p className="text-2xl text-white/95 font-medium max-w-lg drop-shadow-md">
                     Save Anything. <br/>
-                    <span className="text-purple-300">Find Everything.</span>
+                    <span className="text-purple-200">Find Everything.</span>
                 </p>
-                <p className="text-lg text-white/70 max-w-md">
+                <p className="text-lg text-white/80 max-w-md drop-shadow-sm">
                    Your intelligent second brain. Organize links, notes, and images with the power of Gemini AI.
                 </p>
             </div>
 
-            {/* RIGHT SIDE: Glassmorphism Login Card */}
+            {/* RIGHT SIDE: Login Card */}
             <div className="w-full lg:w-1/2 flex justify-center lg:justify-end">
                 <Card className="w-full max-w-[420px] border-white/20 bg-white/70 shadow-2xl backdrop-blur-xl">
                   <CardHeader className="text-center pb-2">
