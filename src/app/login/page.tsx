@@ -136,16 +136,28 @@ export default function LoginPage() {
   }
 
   return (
-    // FIX: Inline style with multiple backgrounds (Image first, Gradient fallback)
-    <div 
-        className="flex min-h-screen w-full relative overflow-hidden"
-        style={{ 
-            background: "url('/images/background.png') center/cover no-repeat, linear-gradient(135deg, #0f172a 0%, #3b0764 50%, #0f172a 100%)"
-        }}
-    >
+    <div className="flex min-h-screen w-full relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         
-        {/* Dark Overlay for Readability */}
-        <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] z-0 pointer-events-none" />
+        {/* --- ROBUST BACKGROUND IMAGE HANDLING --- */}
+        {/* 1. Try PNG first */}
+        <img
+            src="/images/background.png"
+            alt="Background"
+            className="fixed inset-0 w-full h-full object-cover z-0"
+            onError={(e) => {
+                // If PNG fails, try JPG
+                const target = e.currentTarget;
+                if (target.src.endsWith('.png')) {
+                    target.src = "/images/background.jpg"; 
+                } else {
+                    // If JPG also fails, hide image so gradient shows
+                    target.style.display = 'none';
+                }
+            }}
+        />
+        
+        {/* Dark Overlay */}
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-0 pointer-events-none" />
 
         {/* --- CONTENT LAYER --- */}
         <div className="container relative z-10 flex flex-col lg:flex-row items-center justify-center min-h-screen px-4 gap-12 lg:gap-24 mx-auto">
