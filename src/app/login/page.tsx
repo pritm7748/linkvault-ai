@@ -1,8 +1,8 @@
+// src/app/login/page.tsx
 'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image' // Import Next.js Image component
 import { createClient } from '@/lib/supabase/client'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -137,24 +137,23 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full relative">
+    // Fallback gradient in case image fails
+    <div className="flex min-h-screen w-full relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         
-        {/* --- 1. BACKGROUND IMAGE LAYER (Fixed Position) --- */}
-        <div className="fixed inset-0 z-0">
-             {/* Ensure the file exists at public/images/background.png */}
-            <Image 
-                src="/images/background.png" 
-                alt="Background" 
-                fill 
-                className="object-cover"
-                priority // Forces the image to load immediately
-                quality={100}
-            />
-            {/* Dark Overlay for Readability */}
-            <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
-        </div>
+        {/* --- BACKGROUND IMAGE LAYER --- */}
+        {/* We use a standard img tag here for maximum reliability */}
+        <img
+            src="/images/background.png"
+            alt="Background"
+            className="fixed inset-0 w-full h-full object-cover z-0"
+            // If the image fails to load (e.g., path error), this hides the broken icon so the gradient shows
+            onError={(e) => { e.currentTarget.style.display = 'none' }}
+        />
+        
+        {/* Dark Overlay */}
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-0 pointer-events-none" />
 
-        {/* --- 2. CONTENT LAYER (Sits on top of Z-0) --- */}
+        {/* --- CONTENT LAYER --- */}
         <div className="container relative z-10 flex flex-col lg:flex-row items-center justify-center min-h-screen px-4 gap-12 lg:gap-24 mx-auto">
             
             {/* LEFT SIDE: Branding */}
@@ -182,7 +181,6 @@ export default function LoginPage() {
                   </CardHeader>
                   <CardContent>
                     <Tabs defaultValue="signin" className="w-full">
-                      {/* Added explicit cursor-pointer */}
                       <TabsList className="grid w-full grid-cols-3 bg-black/5 mb-4">
                         <TabsTrigger value="signin" className="cursor-pointer data-[state=active]:bg-white data-[state=active]:shadow-sm">Password</TabsTrigger>
                         <TabsTrigger value="signup" className="cursor-pointer data-[state=active]:bg-white data-[state=active]:shadow-sm">Sign Up</TabsTrigger>
