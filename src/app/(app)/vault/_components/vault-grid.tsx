@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { MoreHorizontal, Trash2, Edit, FolderInput, Star, LogOut, Video, Link2, FileText, Image as ImageIcon } from 'lucide-react'
+import { MoreHorizontal, Trash2, Edit, FolderInput, Star, LogOut, Video, Link2, FileText, Image as ImageIcon, X as XIcon } from 'lucide-react'
 import { ItemDetailsDialog } from './item-details-dialog'
 import { MoveToCollectionDialog } from './move-to-collection-dialog'
 
@@ -57,7 +57,6 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
   const pathname = usePathname();
   const isInCollectionView = pathname.includes('/collections/');
 
-  // Helper for Visual Types (Top Border Color + Icon)
   const getTypeStyles = (type: string) => {
     switch (type) {
         case 'video': return { color: 'border-t-red-500', icon: <Video className="h-3 w-3 text-red-500" /> };
@@ -188,18 +187,30 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
   return (
     <>
       {selectedItems.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-stone-900 text-white rounded-full shadow-xl p-2 px-6 flex items-center gap-4 animate-in slide-in-from-bottom-4">
-          <p className="text-sm font-medium">{selectedItems.length} selected</p>
-          <div className="h-4 w-px bg-white/20" />
-          <Button variant="ghost" size="sm" onClick={() => handleOpenMoveDialog(null)} className="text-white hover:text-white hover:bg-white/20 h-8">Move</Button>
+        <div 
+            // FIX: Centering logic for Floating Bar
+            // left-1/2 -translate-x-1/2 centers it to the Window
+            // md:left-[calc(50%+110px)] centers it to the Content (Window/2 + Sidebar/2)
+            // lg:left-[calc(50%+140px)] handles the wider sidebar on large screens
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 md:left-[calc(50%+110px)] lg:left-[calc(50%+140px)] z-50 
+            bg-white text-stone-900 border border-stone-200 rounded-full shadow-2xl p-2 px-6 
+            flex items-center gap-4 animate-in slide-in-from-bottom-4"
+        >
+          <p className="text-sm font-semibold">{selectedItems.length} selected</p>
+          <div className="h-4 w-px bg-stone-200" />
+          
+          <Button variant="ghost" size="sm" onClick={() => handleOpenMoveDialog(null)} className="h-8 text-stone-600 hover:text-stone-900 hover:bg-stone-100">Move</Button>
 
           {isInCollectionView ? (
-            <Button variant="ghost" size="sm" onClick={handleBulkRemoveFromCollection} className="text-red-300 hover:text-red-200 hover:bg-red-900/30 h-8">Remove</Button>
+            <Button variant="ghost" size="sm" onClick={handleBulkRemoveFromCollection} className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50">Remove</Button>
           ) : (
-            <Button variant="ghost" size="sm" onClick={() => setItemToDelete(1)} className="text-red-300 hover:text-red-200 hover:bg-red-900/30 h-8">Delete</Button>
+            <Button variant="ghost" size="sm" onClick={() => setItemToDelete(1)} className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50">Delete</Button>
           )}
 
-          <Button variant="ghost" size="sm" onClick={() => setSelectedItems([])} className="text-white/50 hover:text-white hover:bg-transparent h-8">X</Button>
+          {/* FIX: Cursor pointer added to X */}
+          <Button variant="ghost" size="sm" onClick={() => setSelectedItems([])} className="h-8 w-8 p-0 rounded-full hover:bg-stone-100 cursor-pointer">
+            <XIcon className="h-4 w-4 text-stone-400 hover:text-stone-900" />
+          </Button>
         </div>
       )}
 
@@ -214,11 +225,12 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
                 key={item.id} 
                 className={`bg-white border-stone-200 shadow-sm flex flex-col transition-all relative group 
                     ${isSelected ? 'ring-2 ring-stone-900 border-transparent shadow-md' : 'hover:shadow-md hover:border-stone-300'}
-                    border-t-4 ${typeStyle.color} /* VISUAL TYPE INDICATOR */
+                    border-t-4 ${typeStyle.color}
                 `}
               >
                 <div 
-                  className="absolute top-3 left-3 z-10"
+                  // FIX: Moved North-West to top-2 left-2
+                  className="absolute top-2 left-2 z-10"
                   onClick={(e) => handleSelectItem(e, item.id)}
                 >
                   <Input 
@@ -229,7 +241,6 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
                   />
                 </div>
                 
-                {/* FIX: Star cleanly positioned at top-right, no extra spacing forced */}
                 <Button 
                   variant="ghost" 
                   size="icon" 
@@ -240,7 +251,6 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
                 </Button>
 
                 <div className="flex-grow cursor-pointer p-1" onClick={() => handleOpenDetails(item.id)}>
-                  {/* FIX: Removed pt-10. Added right padding so text doesn't overlap star */}
                   <CardHeader className="pb-2 pr-10">
                     <div className="flex items-center gap-2 mb-2">
                         {typeStyle.icon}
@@ -255,10 +265,9 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
                   </CardContent>
                 </div>
                 
-                {/* FIX: Reduced bottom padding (pb-3) to remove 'too much space' */}
-                <CardFooter className="flex justify-between items-center pt-0 pb-3">
+                {/* FIX: Reduced bottom padding to pb-2 */}
+                <CardFooter className="flex justify-between items-center pt-0 pb-2">
                      <div className="flex flex-wrap gap-1">
-                       {/* FIX: Restored to 2 tags as originally requested/implied by 'original was good' */}
                        {item.processed_tags?.slice(0, 2).map((tag: string) => (<span key={tag} className="px-2 py-0.5 bg-stone-100 text-stone-600 text-xs rounded-full border border-stone-200">{tag}</span>))}
                    </div>
                    
@@ -268,7 +277,6 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
                             <MoreHorizontal className="h-4 w-4" />
                         </Button>
                      </DropdownMenuTrigger>
-                     {/* FIX: align="start" makes the menu open OUTWARDS to the right */}
                      <DropdownMenuContent align="start" className="w-48">
                        <DropdownMenuItem onClick={() => handleOpenDetails(item.id)} className="cursor-pointer font-medium text-stone-700">
                             <Edit className="mr-2 h-4 w-4" /> View / Edit
