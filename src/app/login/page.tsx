@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChromeIcon, LoaderCircle } from 'lucide-react' 
+import { ChromeIcon, LoaderCircle, Sparkles } from 'lucide-react' 
 import { GitHubLogoIcon } from '@radix-ui/react-icons'
 
 export default function LoginPage() {
@@ -23,79 +23,90 @@ export default function LoginPage() {
   }
 
   return (
-    // MAIN CONTAINER: 
-    // 1. We access '/background.png' directly (after you move it to public/).
-    // 2. We use specific text colors to ensure visibility.
-    <div 
-        className="min-h-screen w-full flex flex-col lg:flex-row items-center justify-center p-8 gap-12 lg:gap-24 overflow-hidden relative"
-        style={{
-            backgroundImage: "url('/background.png')", 
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            backgroundColor: '#2e1065', // Fallback purple if image fails
-        }}
-    >
-        {/* Dark Overlay for text readability */}
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] z-0" />
+    // MAIN CONTAINER: Dark AI Theme generated via CSS (No external images required)
+    <div className="min-h-screen w-full flex items-center justify-center p-4 lg:p-8 overflow-hidden relative bg-slate-950 selection:bg-purple-500/30">
+        
+        {/* --- CSS BACKGROUND EFFECTS --- */}
+        {/* 1. Purple Glow at Top Center */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-purple-600/20 blur-[120px] rounded-full pointer-events-none" />
+        {/* 2. Blue Glow at Bottom Right */}
+        <div className="absolute bottom-0 right-0 w-[800px] h-[600px] bg-blue-600/10 blur-[100px] rounded-full pointer-events-none" />
+        {/* 3. Subtle Grid Pattern Overlay */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
 
-        {/* --- LEFT SIDE: BRANDING --- */}
-        <div className="relative z-10 w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left space-y-6">
-            <h1 className="text-6xl font-extrabold tracking-tighter text-white drop-shadow-2xl">
-                LinkVault AI
-            </h1>
-            <p className="text-3xl text-white/95 font-semibold drop-shadow-lg">
-                Save Anything. <br/>
-                <span className="text-purple-300">Find Everything.</span>
-            </p>
-            <p className="text-xl text-white/80 max-w-md font-light">
-               Your intelligent second brain. Organize links, notes, and images with the power of Gemini AI.
-            </p>
-        </div>
+        <div className="container relative z-10 flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-24">
+            
+            {/* --- LEFT SIDE: BRANDING --- */}
+            <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left space-y-8">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-purple-200 backdrop-blur-sm">
+                    <Sparkles className="h-4 w-4 text-purple-400" />
+                    <span>Now with Gemini 2.0 Flash</span>
+                </div>
+                
+                <h1 className="text-5xl lg:text-7xl font-bold tracking-tighter text-white drop-shadow-2xl">
+                    LinkVault <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">AI</span>
+                </h1>
+                
+                <p className="text-xl text-slate-400 max-w-lg leading-relaxed">
+                    Your intelligent second brain. Save links, notes, and images, and let AI organize them for you.
+                </p>
 
-        {/* --- RIGHT SIDE: LOGIN CARD --- */}
-        <div className="relative z-10 w-full lg:w-1/2 flex justify-center lg:justify-end">
-            <Card className="w-full max-w-[420px] border-white/20 bg-white/80 shadow-2xl backdrop-blur-xl">
-                <CardHeader className="text-center pb-2">
-                    <CardTitle className="text-2xl font-bold text-slate-900">Welcome Back</CardTitle>
-                    <CardDescription className="text-slate-600 font-medium">
-                        Sign in to access your vault
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Tabs defaultValue="signin" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3 bg-slate-200/50 mb-6">
-                            <TabsTrigger value="signin" className="cursor-pointer font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm">Sign In</TabsTrigger>
-                            <TabsTrigger value="signup" className="cursor-pointer font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm">Sign Up</TabsTrigger>
-                            <TabsTrigger value="magiclink" className="cursor-pointer font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm">Magic Link</TabsTrigger>
-                        </TabsList>
+                <div className="flex flex-col sm:flex-row gap-4 w-full justify-center lg:justify-start">
+                   <div className="flex -space-x-4 rtl:space-x-reverse">
+                        {[1,2,3,4].map((i) => (
+                            <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-950 bg-slate-800 flex items-center justify-center text-xs text-white font-bold">
+                                {String.fromCharCode(64+i)}
+                            </div>
+                        ))}
+                   </div>
+                   <p className="flex items-center text-sm text-slate-500">Trusted by 1,000+ thinkers</p>
+                </div>
+            </div>
+
+            {/* --- RIGHT SIDE: LOGIN CARD --- */}
+            <div className="w-full lg:w-[420px]">
+                <Card className="border-white/10 bg-white/5 shadow-2xl backdrop-blur-md">
+                    <CardHeader className="text-center pb-6 border-b border-white/5">
+                        <CardTitle className="text-2xl font-bold text-white">Get Started</CardTitle>
+                        <CardDescription className="text-slate-400">
+                            Sign in to access your vault
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        <Tabs defaultValue="signin" className="w-full">
+                            <TabsList className="grid w-full grid-cols-3 bg-black/20 mb-6 border border-white/5">
+                                <TabsTrigger value="signin" className="cursor-pointer text-slate-400 data-[state=active]:bg-white/10 data-[state=active]:text-white transition-all">Sign In</TabsTrigger>
+                                <TabsTrigger value="signup" className="cursor-pointer text-slate-400 data-[state=active]:bg-white/10 data-[state=active]:text-white transition-all">Sign Up</TabsTrigger>
+                                <TabsTrigger value="magiclink" className="cursor-pointer text-slate-400 data-[state=active]:bg-white/10 data-[state=active]:text-white transition-all">Magic Link</TabsTrigger>
+                            </TabsList>
+                            
+                            <TabsContent value="signin"><AuthForm mode="signin" /></TabsContent>
+                            <TabsContent value="signup"><AuthForm mode="signup" /></TabsContent>
+                            <TabsContent value="magiclink"><MagicLinkAuth /></TabsContent>
+                        </Tabs>
                         
-                        <TabsContent value="signin"><AuthForm mode="signin" /></TabsContent>
-                        <TabsContent value="signup"><AuthForm mode="signup" /></TabsContent>
-                        <TabsContent value="magiclink"><MagicLinkAuth /></TabsContent>
-                    </Tabs>
-                    
-                    <div className="mt-8 relative">
-                        <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-300" /></div>
-                        <div className="relative flex justify-center text-xs uppercase"><span className="bg-transparent px-2 text-slate-500 font-bold backdrop-blur-md">Or continue with</span></div>
-                    </div>
+                        <div className="mt-8 relative">
+                            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-white/10" /></div>
+                            <div className="relative flex justify-center text-xs uppercase"><span className="bg-transparent px-2 text-slate-500 font-medium">Or continue with</span></div>
+                        </div>
 
-                    <div className="grid grid-cols-2 gap-3 mt-6">
-                        <Button variant="outline" type="button" onClick={() => handleOAuthLogin('google')} className="cursor-pointer bg-white hover:bg-slate-50 border-slate-300">
-                            <ChromeIcon className="mr-2 h-4 w-4 text-slate-700" /> Google
-                        </Button>
-                        <Button variant="outline" type="button" onClick={() => handleOAuthLogin('github')} className="cursor-pointer bg-white hover:bg-slate-50 border-slate-300">
-                            <GitHubLogoIcon className="mr-2 h-4 w-4 text-slate-700" /> GitHub
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
+                        <div className="grid grid-cols-2 gap-3 mt-6">
+                            <Button variant="outline" type="button" onClick={() => handleOAuthLogin('google')} className="cursor-pointer bg-white/5 border-white/10 hover:bg-white/10 text-white hover:text-white h-11">
+                                <ChromeIcon className="mr-2 h-4 w-4" /> Google
+                            </Button>
+                            <Button variant="outline" type="button" onClick={() => handleOAuthLogin('github')} className="cursor-pointer bg-white/5 border-white/10 hover:bg-white/10 text-white hover:text-white h-11">
+                                <GitHubLogoIcon className="mr-2 h-4 w-4" /> GitHub
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     </div>
   )
 }
 
-// --- SUB COMPONENTS ---
+// --- SUB COMPONENTS (Logic Preserved, UI Upgraded) ---
 
 function AuthForm({ mode }: { mode: 'signin' | 'signup' }) {
     const supabase = createClient()
@@ -127,29 +138,29 @@ function AuthForm({ mode }: { mode: 'signin' | 'signup' }) {
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-                <Label className="text-slate-700 font-semibold">Email</Label>
+                <Label className="text-slate-300 text-xs font-semibold uppercase tracking-wider">Email Address</Label>
                 <Input 
                     type="email" 
                     value={email} 
                     onChange={e => setEmail(e.target.value)} 
-                    className="bg-white border-slate-300 focus:border-purple-500 placeholder:text-slate-400" 
+                    className="bg-black/20 border-white/10 text-white placeholder:text-white/20 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 h-11" 
                     placeholder="name@example.com"
                     required 
                 />
             </div>
             <div className="space-y-2">
-                <Label className="text-slate-700 font-semibold">Password</Label>
+                <Label className="text-slate-300 text-xs font-semibold uppercase tracking-wider">Password</Label>
                 <Input 
                     type="password" 
                     value={password} 
                     onChange={e => setPassword(e.target.value)} 
-                    className="bg-white border-slate-300 focus:border-purple-500 placeholder:text-slate-400" 
+                    className="bg-black/20 border-white/10 text-white placeholder:text-white/20 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 h-11" 
                     placeholder="••••••••"
                     required 
                 />
             </div>
-            {message && <p className="text-sm font-medium text-blue-600 text-center bg-blue-50 p-2 rounded">{message}</p>}
-            <Button type="submit" className="w-full cursor-pointer bg-purple-600 hover:bg-purple-700 text-white font-bold" disabled={loading}>
+            {message && <p className="text-sm font-medium text-blue-400 text-center bg-blue-900/20 p-2 rounded border border-blue-500/30">{message}</p>}
+            <Button type="submit" className="w-full cursor-pointer bg-purple-600 hover:bg-purple-700 text-white font-bold h-11 shadow-[0_0_20px_rgba(147,51,234,0.3)] transition-all hover:shadow-[0_0_25px_rgba(147,51,234,0.5)]" disabled={loading}>
                 {loading ? <LoaderCircle className="animate-spin" /> : (mode === 'signin' ? "Sign In" : "Create Account")}
             </Button>
         </form>
@@ -176,18 +187,18 @@ function MagicLinkAuth() {
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-                <Label className="text-slate-700 font-semibold">Email</Label>
+                <Label className="text-slate-300 text-xs font-semibold uppercase tracking-wider">Email Address</Label>
                 <Input 
                     type="email" 
                     value={email} 
                     onChange={e => setEmail(e.target.value)} 
-                    className="bg-white border-slate-300 focus:border-purple-500 placeholder:text-slate-400" 
+                    className="bg-black/20 border-white/10 text-white placeholder:text-white/20 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 h-11" 
                     placeholder="name@example.com"
                     required 
                 />
             </div>
-            {message && <p className="text-sm font-medium text-blue-600 text-center bg-blue-50 p-2 rounded">{message}</p>}
-            <Button type="submit" className="w-full cursor-pointer bg-purple-600 hover:bg-purple-700 text-white font-bold" disabled={loading}>
+            {message && <p className="text-sm font-medium text-blue-400 text-center bg-blue-900/20 p-2 rounded border border-blue-500/30">{message}</p>}
+            <Button type="submit" className="w-full cursor-pointer bg-purple-600 hover:bg-purple-700 text-white font-bold h-11 shadow-[0_0_20px_rgba(147,51,234,0.3)] transition-all hover:shadow-[0_0_25px_rgba(147,51,234,0.5)]" disabled={loading}>
                 {loading ? <LoaderCircle className="animate-spin" /> : "Send Magic Link"}
             </Button>
         </form>
