@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Input } from '@/components/ui/input' // Restore Input for Desktop
-import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input' // Reverted to Input for stability
 import { Button } from '@/components/ui/button'
 import { Search, Wand2 } from 'lucide-react'
 import { QandADialog } from './q-and-a-dialog'
@@ -20,7 +19,6 @@ export function SearchBar() {
   const searchParams = useSearchParams()
   
   const [query, setQuery] = useState(searchParams.get('q') || '')
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // --- State for Q&A Dialog ---
   const [isQnOpen, setIsQnOpen] = useState(false)
@@ -32,28 +30,13 @@ export function SearchBar() {
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  // --- Auto-Resize Logic (Mobile Only) ---
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = '40px'; 
-      const scrollHeight = textareaRef.current.scrollHeight;
-      textareaRef.current.style.height = `${Math.min(scrollHeight, 120)}px`;
-    }
-  }, [query]);
-
   const executeSearch = () => {
     if (!query.trim()) return;
     router.push(`/search?q=${encodeURIComponent(query)}`);
   };
 
-  // --- Handle Key Presses (Works for both Input and Textarea) ---
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
-    // For Textarea: Enter submits, Shift+Enter adds newline
-    // For Input: Enter submits
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
-      if (event.target instanceof HTMLTextAreaElement && event.shiftKey) {
-        return; // Allow new line on mobile textarea
-      }
       event.preventDefault();
       executeSearch();
     }
@@ -96,53 +79,43 @@ export function SearchBar() {
 
   return (
     <>
-      <div className="w-full flex items-end gap-2">
-        <div className="relative flex-grow">
-          {/* Icon - Absolute positioning works for both inputs */}
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 md:top-3 md:translate-y-0 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-          
-          {/* --- 1. DESKTOP INPUT (Hidden on Mobile) --- */}
-          {/* Restores the clean, single-line look for desktop users */}
+      <div className="w-full flex items-center gap-2">
+        
+        {/* INPUT: flex-1 ensures it eats up all the space saved by the smaller buttons */}
+        <div className="relative flex-1 min-w-0"> 
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
             name="query"
-            placeholder="Search your vault or ask a question..."
-            className="hidden md:block w-full bg-background pl-9 shadow-none h-10"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
-
-          {/* --- 2. MOBILE TEXTAREA (Hidden on Desktop) --- */}
-          {/* Keeps the auto-growing feature for mobile users */}
-          <Textarea
-            ref={textareaRef}
-            name="query"
             placeholder="Search..."
-            className="md:hidden w-full min-h-[40px] max-h-[120px] resize-none overflow-y-auto bg-background pl-9 pr-4 py-[9px] shadow-none rounded-md border-input focus-visible:ring-1 focus-visible:ring-ring text-base leading-tight transition-all"
+            className="w-full bg-background pl-9 shadow-none h-10 text-base md:text-sm" // text-base prevents iOS zoom
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            rows={1}
           />
         </div>
 
+        {/* SEARCH BUTTON: Icon only on Mobile, Text on Desktop */}
         <Button 
             variant="outline" 
             onClick={executeSearch} 
             disabled={!query}
-            className="h-10 mb-0 shrink-0"
+            className="shrink-0 px-3 md:px-4"
         >
-            <Search className="mr-2 h-4 w-4" />
-            Search
+            {/* The margin right (mr-2) only applies on desktop when text is visible */}
+            <Search className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Search</span>
         </Button>
+
+        {/* ASK BUTTON: Keep concise */}
         <Button 
             onClick={handleAskAI} 
             disabled={!query || isLoadingAnswer} 
-            className="bg-purple-600 hover:bg-purple-700 h-10 mb-0 shrink-0"
+            className="bg-purple-600 hover:bg-purple-700 shrink-0 px-3 md:px-4"
         >
           <Wand2 className="mr-2 h-4 w-4" />
-          Ask
+          <span className="hidden md:inline">Ask AI</span>
+          <span className="md:hidden">Ask</span>
         </Button>
       </div>
 
