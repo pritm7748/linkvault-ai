@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea' // Changed from Input to Textarea
 import { Button } from '@/components/ui/button'
 import { Search, Wand2 } from 'lucide-react'
 import { QandADialog } from './q-and-a-dialog'
@@ -19,6 +19,7 @@ export function SearchBar() {
   const searchParams = useSearchParams()
   
   const [query, setQuery] = useState(searchParams.get('q') || '')
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // --- State for Q&A Dialog ---
   const [isQnOpen, setIsQnOpen] = useState(false)
@@ -30,16 +31,27 @@ export function SearchBar() {
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  // --- UPDATED: Simplified search function ---
+  // --- Auto-Resize Logic ---
+  useEffect(() => {
+    if (textareaRef.current) {
+      // Reset height to calculate scrollHeight correctly
+      textareaRef.current.style.height = '40px'; 
+      // Set new height based on content, capped at ~120px (approx 5 lines)
+      const scrollHeight = textareaRef.current.scrollHeight;
+      textareaRef.current.style.height = `${Math.min(scrollHeight, 120)}px`;
+    }
+  }, [query]);
+
   const executeSearch = () => {
-    if (!query) return;
+    if (!query.trim()) return; // Prevent empty searches
     router.push(`/search?q=${encodeURIComponent(query)}`);
   };
 
-  // --- NEW: Handle Enter key press for standard search ---
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
+  // --- Handle Enter Key ---
+  // Enter = Submit, Shift+Enter = New Line
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault(); // Prevent new line
       executeSearch();
     }
   };
@@ -81,27 +93,42 @@ export function SearchBar() {
 
   return (
     <>
-      <div className="w-full flex items-center gap-2">
-        {/* --- UPDATED: The input is no longer inside a form --- */}
+      <div className="w-full flex items-end gap-2">
         <div className="relative flex-grow">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
+          {/* Icon stays fixed at the top-left */}
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+          
+          <Textarea
+            ref={textareaRef}
             name="query"
             placeholder="Search your vault or ask a question..."
-            className="w-full appearance-none bg-background pl-8 shadow-none"
+            // Classes Breakdown:
+            // min-h-[40px]: Matches button height
+            // text-base: 16px font size on mobile (prevents iOS zoom)
+            // md:text-sm: Smaller font on desktop
+            // resize-none: Hides the manual resize handle
+            className="w-full min-h-[40px] max-h-[120px] resize-none overflow-y-auto bg-background pl-9 pr-4 py-[9px] shadow-none rounded-md border-input focus-visible:ring-1 focus-visible:ring-ring text-base md:text-sm leading-tight transition-all"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown} // Added this handler
+            onKeyDown={handleKeyDown}
+            rows={1}
           />
         </div>
 
-        {/* --- UPDATED: Replaced Select with two distinct buttons --- */}
-        <Button variant="outline" onClick={executeSearch} disabled={!query}>
+        <Button 
+            variant="outline" 
+            onClick={executeSearch} 
+            disabled={!query}
+            className="h-10 mb-0 shrink-0"
+        >
             <Search className="mr-2 h-4 w-4" />
             Search
         </Button>
-        <Button onClick={handleAskAI} disabled={!query || isLoadingAnswer} className="bg-purple-600 hover:bg-purple-700">
+        <Button 
+            onClick={handleAskAI} 
+            disabled={!query || isLoadingAnswer} 
+            className="bg-purple-600 hover:bg-purple-700 h-10 mb-0 shrink-0"
+        >
           <Wand2 className="mr-2 h-4 w-4" />
           Ask
         </Button>
