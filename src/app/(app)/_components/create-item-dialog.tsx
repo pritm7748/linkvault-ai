@@ -66,7 +66,9 @@ export function CreateItemDialog() {
             <Plus className="h-4 w-4" /> New Item
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] bg-white text-stone-900">
+      
+      {/* FIX: overflow-hidden prevents internal elements from stretching the parent */}
+      <DialogContent className="sm:max-w-[600px] w-[95vw] bg-white text-stone-900 overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Add to Vault</DialogTitle>
         </DialogHeader>
@@ -92,11 +94,11 @@ export function CreateItemDialog() {
             <TabsContent value="note" className="space-y-4 mt-0">
                 <div className="space-y-2">
                     <Label>Your Note</Label>
-                    {/* --- FIX: Added 'resize-none' to prevent stretching --- */}
+                    {/* FIX: 'break-words' forces long strings to wrap. 'w-full' constrains it. */}
                     <Textarea 
                         name="content" 
                         placeholder="Type your thought..." 
-                        className="min-h-[150px] bg-stone-50 resize-none" 
+                        className="min-h-[200px] w-full bg-stone-50 resize-none break-words whitespace-pre-wrap" 
                         required={activeTab === 'note'} 
                     />
                 </div>
