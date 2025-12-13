@@ -1,4 +1,3 @@
-// src/app/login/page.tsx
 'use client'
 
 import { useState } from 'react'
@@ -137,21 +136,16 @@ export default function LoginPage() {
   }
 
   return (
-    // Fallback gradient in case image fails
-    <div className="flex min-h-screen w-full relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    // FIX: Inline style with multiple backgrounds (Image first, Gradient fallback)
+    <div 
+        className="flex min-h-screen w-full relative overflow-hidden"
+        style={{ 
+            background: "url('/images/background.png') center/cover no-repeat, linear-gradient(135deg, #0f172a 0%, #3b0764 50%, #0f172a 100%)"
+        }}
+    >
         
-        {/* --- BACKGROUND IMAGE LAYER --- */}
-        {/* We use a standard img tag here for maximum reliability */}
-        <img
-            src="/images/background.png"
-            alt="Background"
-            className="fixed inset-0 w-full h-full object-cover z-0"
-            // If the image fails to load (e.g., path error), this hides the broken icon so the gradient shows
-            onError={(e) => { e.currentTarget.style.display = 'none' }}
-        />
-        
-        {/* Dark Overlay */}
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-0 pointer-events-none" />
+        {/* Dark Overlay for Readability */}
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] z-0 pointer-events-none" />
 
         {/* --- CONTENT LAYER --- */}
         <div className="container relative z-10 flex flex-col lg:flex-row items-center justify-center min-h-screen px-4 gap-12 lg:gap-24 mx-auto">
