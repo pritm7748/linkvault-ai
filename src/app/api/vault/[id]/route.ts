@@ -1,17 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServer } from '@/lib/supabase/server'
-import { cookies } from 'next/headers' // --- ADD THIS IMPORT ---
+import { cookies } from 'next/headers'
 
-// @ts-expect-error - The params object is correctly passed by Next.js
-export async function GET(req: NextRequest, { params }) {
-  const cookieStore = cookies() // --- ADD THIS LINE ---
-  const supabase = createServer(cookieStore) // --- PASS cookieStore HERE & REMOVE AWAIT ---
+// Define the type for the params prop
+type Props = {
+  params: Promise<{ id: string }>
+}
+
+export async function GET(req: NextRequest, props: Props) {
+  // 1. Await params before accessing id
+  const params = await props.params;
+  const { id } = params;
+
+  const cookieStore = cookies()
+  const supabase = createServer(cookieStore)
+  
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { id } = params
   if (!id) {
     return NextResponse.json({ error: 'Item ID is required' }, { status: 400 })
   }
@@ -31,16 +39,19 @@ export async function GET(req: NextRequest, { params }) {
   return NextResponse.json(item)
 }
 
-// @ts-expect-error - The params object is correctly passed by Next.js
-export async function PUT(req: NextRequest, { params }) {
-  const cookieStore = cookies() // --- ADD THIS LINE ---
-  const supabase = createServer(cookieStore) // --- PASS cookieStore HERE & REMOVE AWAIT ---
+export async function PUT(req: NextRequest, props: Props) {
+  // 1. Await params here too
+  const params = await props.params;
+  const { id } = params;
+
+  const cookieStore = cookies()
+  const supabase = createServer(cookieStore)
+  
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { id } = params
   const body = await req.json()
   
   const updateData: { [key: string]: string | string[] | number | null } = {}
@@ -70,10 +81,13 @@ export async function PUT(req: NextRequest, { params }) {
   return NextResponse.json(updatedItem)
 }
 
-// @ts-expect-error - The params object is correctly passed by Next.js
-export async function PATCH(req: NextRequest, { params }) {
-  const cookieStore = cookies() // --- ADD THIS LINE ---
-  const supabase = createServer(cookieStore) // --- PASS cookieStore HERE & REMOVE AWAIT ---
+export async function PATCH(req: NextRequest, props: Props) {
+  // 1. Await params here too
+  const params = await props.params;
+  
+  const cookieStore = cookies()
+  const supabase = createServer(cookieStore)
+  
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

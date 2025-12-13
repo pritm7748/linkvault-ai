@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChromeIcon, LoaderCircle } from 'lucide-react' 
 import { GitHubLogoIcon } from '@radix-ui/react-icons'
 
-// --- COMPONENT: Password Form (Logic Unchanged) ---
+// --- COMPONENT: Password Form (Logic Preserved) ---
 function PasswordAuthForm({ action }: { action: 'signin' | 'signup' }) {
   const router = useRouter()
   const supabase = createClient()
@@ -59,7 +59,6 @@ function PasswordAuthForm({ action }: { action: 'signin' | 'signup' }) {
             required 
             value={email} 
             onChange={(e) => setEmail(e.target.value)}
-            // Added simple transparency to inputs to match glass theme
             className="bg-white/50 border-white/40 focus:bg-white" 
         />
       </div>
@@ -83,7 +82,7 @@ function PasswordAuthForm({ action }: { action: 'signin' | 'signup' }) {
   )
 }
 
-// --- COMPONENT: Magic Link Form (Logic Unchanged) ---
+// --- COMPONENT: Magic Link Form (Logic Preserved) ---
 function MagicLinkForm() {
     const supabase = createClient()
     const [email, setEmail] = useState('')
@@ -125,7 +124,7 @@ function MagicLinkForm() {
     )
 }
 
-// --- COMPONENT: Main Page (UPDATED UI) ---
+// --- MAIN PAGE ---
 export default function LoginPage() {
   const supabase = createClient()
 
@@ -137,66 +136,83 @@ export default function LoginPage() {
   }
 
   return (
-    // UPDATED: Main container with Background Image
+    // MAIN CONTAINER: Full screen, Background Image, Flex Layout
     <div 
-        className="flex min-h-screen w-full items-center justify-center bg-cover bg-center bg-no-repeat relative"
+        className="flex min-h-screen w-full bg-cover bg-center bg-no-repeat relative"
         style={{ backgroundImage: "url('/images/background.png')" }}
     >
-        {/* Optional Overlay to ensure text readability if background is bright */}
-        <div className="absolute inset-0 bg-black/10 backdrop-blur-[2px]" />
+        {/* Dark overlay for readability */}
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] z-0" />
 
-        {/* Glassmorphism Card */}
-        <Card className="relative z-10 mx-4 w-full max-w-[420px] border-white/20 bg-white/60 shadow-2xl backdrop-blur-xl">
-          <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold tracking-tight text-slate-900">LinkVault AI</CardTitle>
-            <CardDescription className="text-slate-700 font-medium">
-              Your intelligent second brain.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 bg-black/5">
-                <TabsTrigger value="signin">Password</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                <TabsTrigger value="magiclink">Magic Link</TabsTrigger>
-              </TabsList>
-              
-              <div className="mt-4">
-                <TabsContent value="signin"><PasswordAuthForm action="signin" /></TabsContent>
-                <TabsContent value="signup"><PasswordAuthForm action="signup" /></TabsContent>
-                <TabsContent value="magiclink"><MagicLinkForm /></TabsContent>
-              </div>
-            </Tabs>
+        <div className="container relative z-10 flex flex-col lg:flex-row items-center justify-center min-h-screen px-4 gap-12 lg:gap-24">
             
-            <div className="mt-6 relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-slate-300" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-transparent px-2 text-slate-600 font-semibold backdrop-blur-sm rounded">Or continue with</span>
-              </div>
+            {/* LEFT SIDE: Branding & Tagline */}
+            <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left space-y-6">
+                <h1 className="text-6xl font-bold tracking-tighter text-white drop-shadow-md">
+                    LinkVault AI
+                </h1>
+                <p className="text-2xl text-white/90 font-medium max-w-lg drop-shadow-sm">
+                    Save Anything. <br/>
+                    <span className="text-purple-300">Find Everything.</span>
+                </p>
+                <p className="text-lg text-white/70 max-w-md">
+                   Your intelligent second brain. Organize links, notes, and images with the power of Gemini AI.
+                </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 mt-6">
-                <Button 
-                    variant="outline" 
-                    type="button" 
-                    onClick={() => handleOAuthLogin('google')}
-                    className="bg-white/50 border-white/40 hover:bg-white/80"
-                >
-                    <ChromeIcon className="mr-2 h-4 w-4" /> Google
-                </Button>
-                 <Button 
-                    variant="outline" 
-                    type="button" 
-                    onClick={() => handleOAuthLogin('github')}
-                    className="bg-white/50 border-white/40 hover:bg-white/80"
-                >
-                    <GitHubLogoIcon className="mr-2 h-4 w-4" /> GitHub
-                </Button>
+            {/* RIGHT SIDE: Glassmorphism Login Card */}
+            <div className="w-full lg:w-1/2 flex justify-center lg:justify-end">
+                <Card className="w-full max-w-[420px] border-white/20 bg-white/70 shadow-2xl backdrop-blur-xl">
+                  <CardHeader className="text-center pb-2">
+                    <CardTitle className="text-2xl font-bold text-slate-900">Welcome Back</CardTitle>
+                    <CardDescription className="text-slate-600">
+                      Sign in to access your vault
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Tabs defaultValue="signin" className="w-full">
+                      <TabsList className="grid w-full grid-cols-3 bg-black/5 mb-4">
+                        <TabsTrigger value="signin">Password</TabsTrigger>
+                        <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                        <TabsTrigger value="magiclink">Magic Link</TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="signin"><PasswordAuthForm action="signin" /></TabsContent>
+                      <TabsContent value="signup"><PasswordAuthForm action="signup" /></TabsContent>
+                      <TabsContent value="magiclink"><MagicLinkForm /></TabsContent>
+                    </Tabs>
+                    
+                    <div className="mt-6 relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-slate-300" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-transparent px-2 text-slate-600 font-semibold backdrop-blur-sm rounded">Or continue with</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 mt-6">
+                        <Button 
+                            variant="outline" 
+                            type="button" 
+                            onClick={() => handleOAuthLogin('google')}
+                            className="bg-white/50 border-white/40 hover:bg-white/80"
+                        >
+                            <ChromeIcon className="mr-2 h-4 w-4" /> Google
+                        </Button>
+                         <Button 
+                            variant="outline" 
+                            type="button" 
+                            onClick={() => handleOAuthLogin('github')}
+                            className="bg-white/50 border-white/40 hover:bg-white/80"
+                        >
+                            <GitHubLogoIcon className="mr-2 h-4 w-4" /> GitHub
+                        </Button>
+                    </div>
+                  </CardContent>
+                </Card>
             </div>
-          </CardContent>
-        </Card>
+        </div>
     </div>
   )
 }
