@@ -4,7 +4,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image' // --- IMPORT NEXT IMAGE ---
 import { createClient } from '@/lib/supabase/client'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -76,7 +75,9 @@ function PasswordAuthForm({ action }: { action: 'signin' | 'signup' }) {
         />
       </div>
       {message && <p className="text-center text-sm text-blue-800 p-2 bg-blue-100/50 rounded-md backdrop-blur-sm">{message}</p>}
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
+      
+      {/* ADDED: cursor-pointer to Button */}
+      <Button type="submit" className="w-full cursor-pointer hover:bg-slate-800" disabled={isSubmitting}>
         {isSubmitting ? <LoaderCircle className="animate-spin" /> : (action === 'signin' ? 'Sign In' : 'Sign Up')}
       </Button>
     </form>
@@ -118,7 +119,9 @@ function MagicLinkForm() {
                 />
             </div>
             {message && <p className="text-center text-sm text-blue-800 p-2 bg-blue-100/50 rounded-md backdrop-blur-sm">{message}</p>}
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            
+            {/* ADDED: cursor-pointer to Button */}
+            <Button type="submit" className="w-full cursor-pointer hover:bg-slate-800" disabled={isSubmitting}>
                 {isSubmitting ? <LoaderCircle className="animate-spin" /> : 'Send Magic Link'}
             </Button>
         </form>
@@ -137,21 +140,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full relative overflow-hidden">
-        {/* --- BACKGROUND IMAGE (Fixed) --- */}
-        <div className="absolute inset-0 z-0">
-            <Image 
-                src="/images/background.png" 
-                alt="Background" 
-                fill 
-                className="object-cover object-center"
-                priority
-            />
-            {/* Overlay to ensure text readability */}
-            <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" />
-        </div>
+    // FIX: Using CSS background-image instead of Next/Image to prevent "Alt Text" errors
+    <div 
+        className="flex min-h-screen w-full relative overflow-hidden bg-cover bg-center bg-no-repeat bg-slate-900"
+        style={{ backgroundImage: "url('/images/background.png')" }}
+    >
+        {/* Overlay to ensure text readability */}
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] z-0" />
 
-        {/* --- CONTENT (Z-Index ensures it sits on top) --- */}
         <div className="container relative z-10 flex flex-col lg:flex-row items-center justify-center min-h-screen px-4 gap-12 lg:gap-24 mx-auto">
             
             {/* LEFT SIDE: Branding */}
@@ -179,10 +175,11 @@ export default function LoginPage() {
                   </CardHeader>
                   <CardContent>
                     <Tabs defaultValue="signin" className="w-full">
+                      {/* ADDED: cursor-pointer to TabsTrigger */}
                       <TabsList className="grid w-full grid-cols-3 bg-black/5 mb-4">
-                        <TabsTrigger value="signin">Password</TabsTrigger>
-                        <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                        <TabsTrigger value="magiclink">Magic Link</TabsTrigger>
+                        <TabsTrigger value="signin" className="cursor-pointer data-[state=active]:bg-white data-[state=active]:shadow-sm">Password</TabsTrigger>
+                        <TabsTrigger value="signup" className="cursor-pointer data-[state=active]:bg-white data-[state=active]:shadow-sm">Sign Up</TabsTrigger>
+                        <TabsTrigger value="magiclink" className="cursor-pointer data-[state=active]:bg-white data-[state=active]:shadow-sm">Magic Link</TabsTrigger>
                       </TabsList>
                       
                       <TabsContent value="signin"><PasswordAuthForm action="signin" /></TabsContent>
@@ -200,11 +197,12 @@ export default function LoginPage() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 mt-6">
+                        {/* ADDED: cursor-pointer to Social Buttons */}
                         <Button 
                             variant="outline" 
                             type="button" 
                             onClick={() => handleOAuthLogin('google')}
-                            className="bg-white/50 border-white/40 hover:bg-white/80"
+                            className="bg-white/50 border-white/40 hover:bg-white/80 cursor-pointer"
                         >
                             <ChromeIcon className="mr-2 h-4 w-4" /> Google
                         </Button>
@@ -212,7 +210,7 @@ export default function LoginPage() {
                             variant="outline" 
                             type="button" 
                             onClick={() => handleOAuthLogin('github')}
-                            className="bg-white/50 border-white/40 hover:bg-white/80"
+                            className="bg-white/50 border-white/40 hover:bg-white/80 cursor-pointer"
                         >
                             <GitHubLogoIcon className="mr-2 h-4 w-4" /> GitHub
                         </Button>
