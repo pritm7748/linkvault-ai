@@ -67,7 +67,6 @@ export function CreateItemDialog() {
         </Button>
       </DialogTrigger>
       
-      {/* FIX: overflow-hidden prevents internal elements from stretching the parent */}
       <DialogContent className="sm:max-w-[600px] w-[95vw] bg-white text-stone-900 overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Add to Vault</DialogTitle>
@@ -94,11 +93,11 @@ export function CreateItemDialog() {
             <TabsContent value="note" className="space-y-4 mt-0">
                 <div className="space-y-2">
                     <Label>Your Note</Label>
-                    {/* FIX: 'break-words' forces long strings to wrap. 'w-full' constrains it. */}
+                    {/* FIX: Added max-h-[350px] and overflow-y-auto to create vertical scrollbar */}
                     <Textarea 
                         name="content" 
                         placeholder="Type your thought..." 
-                        className="min-h-[200px] w-full bg-stone-50 resize-none break-words whitespace-pre-wrap" 
+                        className="min-h-[200px] max-h-[350px] w-full bg-stone-50 resize-none break-words whitespace-pre-wrap overflow-y-auto" 
                         required={activeTab === 'note'} 
                     />
                 </div>
