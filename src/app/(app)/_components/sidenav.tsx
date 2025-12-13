@@ -24,37 +24,13 @@ type SideNavProps = {
   isSheet: boolean;
 };
 
-// --- HELPER 1: Wrapper to handle Mobile Closing ---
-// If we are in a mobile sheet, wrap the child in SheetClose.
-// If on desktop, just render the child.
-const NavWrapper = ({ children, isSheet }: { children: React.ReactNode; isSheet: boolean }) => {
-  if (isSheet) {
-    return <SheetClose asChild>{children}</SheetClose>
-  }
-  return <>{children}</>
-}
-
-// --- HELPER 2: Styling for the links ---
-const NavLink = ({ href, children }: { href: string, children: React.ReactNode }) => {
-  const pathname = usePathname()
-  return (
-    <Link
-      href={href}
-      className={cn(
-        'group flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-stone-100 cursor-pointer',
-        { 'bg-stone-100 text-stone-900 font-medium': pathname === href }
-      )}
-    >
-      {children}
-    </Link>
-  )
-}
-
 export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
   const [isNewCollectionOpen, setIsNewCollectionOpen] = useState(false)
   const [localCollections, setLocalCollections] = useState(collections);
   const [collectionToDelete, setCollectionToDelete] = useState<Collection | null>(null);
+  
   const router = useRouter();
+  const pathname = usePathname();
 
   const mainNavItems = [
     { href: '/vault', label: 'All Items', icon: LayoutDashboard },
@@ -83,15 +59,34 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
     }
   };
 
+  // --- HELPER: Renders a Link, optionally wrapped in SheetClose for mobile ---
+  const renderNavLink = (href: string, icon: React.ReactNode, label: string) => {
+    const content = (
+      <Link
+        href={href}
+        className={cn(
+          'group flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-stone-100 cursor-pointer',
+          { 'bg-stone-100 text-stone-900 font-medium': pathname === href }
+        )}
+      >
+        {icon}
+        <span>{label}</span>
+      </Link>
+    );
+
+    if (isSheet) {
+      return <SheetClose asChild>{content}</SheetClose>;
+    }
+    return content;
+  };
+
   return (
     <>
       <div className="flex h-full max-h-screen flex-col gap-2 bg-[#FBFBF9] border-r">
         <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-          <NavWrapper isSheet={isSheet}>
-            <Link href="/vault" className="flex items-center gap-2 font-serif text-xl font-bold text-stone-900 cursor-pointer">
+          <Link href="/vault" className="flex items-center gap-2 font-serif text-xl font-bold text-stone-900 cursor-pointer">
               LinkVault AI
-            </Link>
-          </NavWrapper>
+          </Link>
         </div>
         
         <div className="flex-1 overflow-y-auto pt-4">
@@ -101,14 +96,9 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
 
             <nav className="grid items-start text-sm font-medium gap-1">
                 {mainNavItems.map((item) => (
-                <NavWrapper isSheet={isSheet} key={item.href}>
-                    <NavLink href={item.href}>
-                    <div className="flex items-center gap-3">
-                        <item.icon className="h-4 w-4" />
-                        {item.label}
+                    <div key={item.href}>
+                        {renderNavLink(item.href, <item.icon className="h-4 w-4" />, item.label)}
                     </div>
-                    </NavLink>
-                </NavWrapper>
                 ))}
             </nav>
           </div>
@@ -123,37 +113,45 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
                   </Button>
               </div>
               <nav className="grid items-start text-sm font-medium gap-1">
-                  <NavWrapper isSheet={isSheet}>
-                    <NavLink href="/vault/favorites">
-                      <div className="flex items-center gap-3">
-                        <Star className="h-4 w-4" />
-                        Favorites
-                      </div>
-                    </NavLink>
-                  </NavWrapper>
+                  
+                  {/* Favorites Link */}
+                  {renderNavLink("/vault/favorites", <Star className="h-4 w-4" />, "Favorites")}
 
-                  {localCollections.map((collection) => (
-                    <NavWrapper isSheet={isSheet} key={collection.id}>
-                      <NavLink href={`/collections/${collection.id}`}>
-                        <div className="flex items-center gap-3">
-                          <Folder className="h-4 w-4" />
-                          <span className="truncate">{collection.name}</span>
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-stone-200 cursor-pointer"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setCollectionToDelete(collection);
-                          }}
+                  {/* Dynamic Collections */}
+                  {localCollections.map((collection) => {
+                    const collectionContent = (
+                        <Link
+                            href={`/collections/${collection.id}`}
+                            className={cn(
+                                'group flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-stone-100 cursor-pointer',
+                                { 'bg-stone-100 text-stone-900 font-medium': pathname === `/collections/${collection.id}` }
+                            )}
                         >
-                          <X className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                      </NavLink>
-                    </NavWrapper>
-                  ))}
+                            <div className="flex items-center gap-3 overflow-hidden">
+                                <Folder className="h-4 w-4 flex-shrink-0" />
+                                <span className="truncate">{collection.name}</span>
+                            </div>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-stone-200 cursor-pointer z-10"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setCollectionToDelete(collection);
+                                }}
+                            >
+                                <X className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                        </Link>
+                    );
+
+                    return (
+                        <div key={collection.id}>
+                            {isSheet ? <SheetClose asChild>{collectionContent}</SheetClose> : collectionContent}
+                        </div>
+                    )
+                  })}
               </nav>
           </div>
         </div>
@@ -161,15 +159,18 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
         {/* FOOTER: Profile and Logout */}
         <div className="mt-auto p-4 border-t bg-white">
           <div className="flex items-center justify-between">
-            {/* WRAPPED PROFILE LINK - Now closes sheet on mobile */}
-            <NavWrapper isSheet={isSheet}>
-              <Link href="/profile" className="flex-grow hover:bg-stone-100 p-2 rounded-md -m-2 transition-colors cursor-pointer">
-                <div>
-                  <p className="text-xs text-muted-foreground">Signed in as</p>
-                  <p className="text-sm font-semibold truncate text-stone-900">{userEmail}</p>
-                </div>
-              </Link>
-            </NavWrapper>
+            {/* PROFILE LINK - Wrapped directly */}
+            {(() => {
+                const profileLink = (
+                    <Link href="/profile" className="flex-grow hover:bg-stone-100 p-2 rounded-md -m-2 transition-colors cursor-pointer block">
+                        <div>
+                        <p className="text-xs text-muted-foreground">Signed in as</p>
+                        <p className="text-sm font-semibold truncate text-stone-900">{userEmail}</p>
+                        </div>
+                    </Link>
+                );
+                return isSheet ? <SheetClose asChild>{profileLink}</SheetClose> : profileLink;
+            })()}
             
             <form action="/api/auth/signout" method="post" className="ml-2">
               <Button type="submit" variant="ghost" size="icon" className="hover:bg-red-50 hover:text-red-600 cursor-pointer">
