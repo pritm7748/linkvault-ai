@@ -62,7 +62,6 @@ export function CreateItemDialog() {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        {/* ADDED: cursor-pointer to ensure the hand icon appears on hover */}
         <Button className="w-full justify-start gap-2 bg-stone-900 hover:bg-stone-800 text-white shadow-sm mb-4 cursor-pointer">
             <Plus className="h-4 w-4" /> New Item
         </Button>
@@ -93,7 +92,13 @@ export function CreateItemDialog() {
             <TabsContent value="note" className="space-y-4 mt-0">
                 <div className="space-y-2">
                     <Label>Your Note</Label>
-                    <Textarea name="content" placeholder="Type your thought..." className="min-h-[150px] bg-stone-50" required={activeTab === 'note'} />
+                    {/* --- FIX: Added 'resize-none' to prevent stretching --- */}
+                    <Textarea 
+                        name="content" 
+                        placeholder="Type your thought..." 
+                        className="min-h-[150px] bg-stone-50 resize-none" 
+                        required={activeTab === 'note'} 
+                    />
                 </div>
             </TabsContent>
 
