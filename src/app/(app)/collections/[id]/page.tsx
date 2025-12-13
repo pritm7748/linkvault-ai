@@ -22,7 +22,13 @@ export default async function CollectionPage(props: Props) {
     { data: allCollections }
   ] = await Promise.all([
     supabase.from('collections').select('name').eq('id', collectionId).single(),
-    supabase.from('vault_items').select('id, processed_title, processed_summary, processed_tags, is_favorited').eq('collection_id', collectionId).order('created_at', { ascending: false }),
+    
+    // --- FIX: Added 'content_type' to the select list below ---
+    supabase.from('vault_items')
+      .select('id, processed_title, processed_summary, processed_tags, is_favorited, content_type') 
+      .eq('collection_id', collectionId)
+      .order('created_at', { ascending: false }),
+      
     supabase.from('collections').select('id, name').order('name')
   ]);
 
@@ -32,11 +38,13 @@ export default async function CollectionPage(props: Props) {
   }
 
   return (
-    <div className="py-6">
-      <div className="mb-6">
-        <p className="text-sm text-stone-500 font-medium uppercase tracking-wide">Collection</p>
-        <h1 className="text-3xl font-bold text-stone-900 mt-1">{collection.name}</h1>
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <p className="text-xs font-bold uppercase text-stone-400 tracking-wider">Collection</p>
+        <h1 className="text-2xl md:text-3xl font-serif font-bold text-stone-900">{collection.name}</h1>
       </div>
+      
+      {/* Now 'items' includes content_type, so VaultGrid will accept it */}
       <VaultGrid initialItems={items || []} collections={allCollections || []} />
     </div>
   )
