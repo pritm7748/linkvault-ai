@@ -37,40 +37,40 @@ export default function LoginPage() {
   const headerText = getHeaderText()
 
   return (
-    // THEME: Warm Beige / Stone Aesthetic
-    <div className="min-h-screen w-full flex items-center justify-center p-4 lg:p-8 relative bg-[#F5F5F0] text-stone-900 selection:bg-stone-200">
+    // CHANGE: h-screen forces fixed height, overflow-hidden prevents scrolling
+    <div className="h-screen w-full flex items-center justify-center p-4 lg:p-8 relative bg-[#F5F5F0] text-stone-900 selection:bg-stone-200 overflow-hidden">
         
         {/* --- BACKGROUND TEXTURE --- */}
-        {/* Subtle noise/grain could be added here, but we'll keep it clean code-only */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
         
         {/* Soft Organic Gradients */}
         <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-orange-200/40 blur-[100px] rounded-full pointer-events-none mix-blend-multiply" />
         <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-stone-300/40 blur-[120px] rounded-full pointer-events-none mix-blend-multiply" />
 
-        <div className="container relative z-10 flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-32">
+        <div className="container relative z-10 flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-32 h-full lg:h-auto">
             
             {/* --- LEFT SIDE: BRANDING --- */}
             <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left space-y-8">
                 
                 <div className="space-y-4">
-                    <h1 className="text-6xl lg:text-7xl font-bold tracking-tighter text-stone-900">
+                    <h1 className="text-5xl lg:text-7xl font-bold tracking-tighter text-stone-900">
                         LinkVault <span className="text-stone-400">AI</span>
                     </h1>
                     
                     <div className="h-1 w-20 bg-stone-900 rounded-full mx-auto lg:mx-0" />
                 </div>
                 
-                <div className="space-y-6 max-w-lg">
+                {/* CHANGE: 'hidden lg:block' hides this text on mobile to save space */}
+                <div className="hidden lg:block space-y-6 max-w-lg">
                     <p className="text-4xl font-medium text-stone-800 leading-[1.1]">
                         The smartest place for your <span className="italic text-stone-500 font-serif">digital chaos.</span>
                     </p>
                     <p className="text-lg text-stone-600 font-light leading-relaxed">
-                        Don't let ideas slip away. Capture links, notes & images instantly and let AI handle the rest.
+                        Don't let ideas slip away. Capture links, notes, and images instantly, and let our AI organize them into a second brain that actually works.
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2 text-sm font-semibold text-stone-500 uppercase tracking-widest">
+                <div className="flex items-center gap-2 text-xs lg:text-sm font-semibold text-stone-500 uppercase tracking-widest">
                     <span>Secure</span> • <span>Private</span> • <span>Intelligent</span>
                 </div>
             </div>
@@ -78,21 +78,20 @@ export default function LoginPage() {
             {/* --- RIGHT SIDE: LOGIN CARD --- */}
             <div className="w-full lg:w-[440px]">
                 <Card className="border border-stone-200 bg-white/80 shadow-xl shadow-stone-200/50 backdrop-blur-sm">
-                    <CardHeader className="text-center pb-6">
-                        {/* Dynamic Title based on Active Tab */}
-                        <CardTitle className="text-2xl font-bold text-stone-900 transition-all duration-300">
+                    <CardHeader className="text-center pb-4 lg:pb-6">
+                        <CardTitle className="text-xl lg:text-2xl font-bold text-stone-900 transition-all duration-300">
                             {headerText.title}
                         </CardTitle>
-                        <CardDescription className="text-stone-500 font-medium">
+                        <CardDescription className="text-stone-500 font-medium text-sm lg:text-base">
                             {headerText.subtitle}
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="pt-2">
+                    <CardContent className="pt-0 lg:pt-2">
                         <Tabs defaultValue="signin" value={activeTab} onValueChange={setActiveTab} className="w-full">
-                            <TabsList className="grid w-full grid-cols-3 bg-stone-100 mb-8 p-1 rounded-lg">
-                                <TabsTrigger value="signin" className="cursor-pointer rounded-md text-stone-500 data-[state=active]:bg-white data-[state=active]:text-stone-900 data-[state=active]:shadow-sm transition-all font-medium">Sign In</TabsTrigger>
-                                <TabsTrigger value="signup" className="cursor-pointer rounded-md text-stone-500 data-[state=active]:bg-white data-[state=active]:text-stone-900 data-[state=active]:shadow-sm transition-all font-medium">Sign Up</TabsTrigger>
-                                <TabsTrigger value="magiclink" className="cursor-pointer rounded-md text-stone-500 data-[state=active]:bg-white data-[state=active]:text-stone-900 data-[state=active]:shadow-sm transition-all font-medium">Magic Link</TabsTrigger>
+                            <TabsList className="grid w-full grid-cols-3 bg-stone-100 mb-6 lg:mb-8 p-1 rounded-lg">
+                                <TabsTrigger value="signin" className="cursor-pointer rounded-md text-stone-500 data-[state=active]:bg-white data-[state=active]:text-stone-900 data-[state=active]:shadow-sm transition-all font-medium text-xs lg:text-sm">Sign In</TabsTrigger>
+                                <TabsTrigger value="signup" className="cursor-pointer rounded-md text-stone-500 data-[state=active]:bg-white data-[state=active]:text-stone-900 data-[state=active]:shadow-sm transition-all font-medium text-xs lg:text-sm">Sign Up</TabsTrigger>
+                                <TabsTrigger value="magiclink" className="cursor-pointer rounded-md text-stone-500 data-[state=active]:bg-white data-[state=active]:text-stone-900 data-[state=active]:shadow-sm transition-all font-medium text-xs lg:text-sm">Magic Link</TabsTrigger>
                             </TabsList>
                             
                             <TabsContent value="signin" className="mt-0"><AuthForm mode="signin" /></TabsContent>
@@ -100,16 +99,16 @@ export default function LoginPage() {
                             <TabsContent value="magiclink" className="mt-0"><MagicLinkAuth /></TabsContent>
                         </Tabs>
                         
-                        <div className="mt-8 relative">
+                        <div className="mt-6 lg:mt-8 relative">
                             <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-stone-200" /></div>
                             <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-stone-400 font-medium tracking-wide">Or continue with</span></div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3 mt-6">
-                            <Button variant="outline" type="button" onClick={() => handleOAuthLogin('google')} className="cursor-pointer bg-white border-stone-200 hover:bg-stone-50 text-stone-700 h-11 transition-all hover:border-stone-300">
+                        <div className="grid grid-cols-2 gap-3 mt-4 lg:mt-6">
+                            <Button variant="outline" type="button" onClick={() => handleOAuthLogin('google')} className="cursor-pointer bg-white border-stone-200 hover:bg-stone-50 text-stone-700 h-10 lg:h-11 transition-all hover:border-stone-300">
                                 <ChromeIcon className="mr-2 h-4 w-4" /> Google
                             </Button>
-                            <Button variant="outline" type="button" onClick={() => handleOAuthLogin('github')} className="cursor-pointer bg-white border-stone-200 hover:bg-stone-50 text-stone-700 h-11 transition-all hover:border-stone-300">
+                            <Button variant="outline" type="button" onClick={() => handleOAuthLogin('github')} className="cursor-pointer bg-white border-stone-200 hover:bg-stone-50 text-stone-700 h-10 lg:h-11 transition-all hover:border-stone-300">
                                 <GitHubLogoIcon className="mr-2 h-4 w-4" /> GitHub
                             </Button>
                         </div>
@@ -151,14 +150,14 @@ function AuthForm({ mode }: { mode: 'signin' | 'signup' }) {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+        <form onSubmit={handleSubmit} className="space-y-3 lg:space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
             <div className="space-y-2">
                 <Label className="text-stone-600 text-xs font-bold uppercase tracking-wider">Email Address</Label>
                 <Input 
                     type="email" 
                     value={email} 
                     onChange={e => setEmail(e.target.value)} 
-                    className="bg-white border-stone-200 text-stone-900 placeholder:text-stone-300 focus:border-stone-500 focus:ring-stone-500/20 h-11 transition-all" 
+                    className="bg-white border-stone-200 text-stone-900 placeholder:text-stone-300 focus:border-stone-500 focus:ring-stone-500/20 h-10 lg:h-11 transition-all" 
                     placeholder="name@example.com"
                     required 
                 />
@@ -169,13 +168,13 @@ function AuthForm({ mode }: { mode: 'signin' | 'signup' }) {
                     type="password" 
                     value={password} 
                     onChange={e => setPassword(e.target.value)} 
-                    className="bg-white border-stone-200 text-stone-900 placeholder:text-stone-300 focus:border-stone-500 focus:ring-stone-500/20 h-11 transition-all" 
+                    className="bg-white border-stone-200 text-stone-900 placeholder:text-stone-300 focus:border-stone-500 focus:ring-stone-500/20 h-10 lg:h-11 transition-all" 
                     placeholder="••••••••"
                     required 
                 />
             </div>
             {message && <p className="text-sm font-medium text-red-600 text-center bg-red-50 p-2 rounded">{message}</p>}
-            <Button type="submit" className="w-full cursor-pointer bg-stone-900 hover:bg-stone-800 text-white font-bold h-11 shadow-lg shadow-stone-900/10 transition-all hover:scale-[1.01]" disabled={loading}>
+            <Button type="submit" className="w-full cursor-pointer bg-stone-900 hover:bg-stone-800 text-white font-bold h-10 lg:h-11 shadow-lg shadow-stone-900/10 transition-all hover:scale-[1.01]" disabled={loading}>
                 {loading ? <LoaderCircle className="animate-spin mr-2" /> : (mode === 'signin' ? "Sign In" : "Create Account")}
                 {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
             </Button>
@@ -201,20 +200,20 @@ function MagicLinkAuth() {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+        <form onSubmit={handleSubmit} className="space-y-3 lg:space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
             <div className="space-y-2">
                 <Label className="text-stone-600 text-xs font-bold uppercase tracking-wider">Email Address</Label>
                 <Input 
                     type="email" 
                     value={email} 
                     onChange={e => setEmail(e.target.value)} 
-                    className="bg-white border-stone-200 text-stone-900 placeholder:text-stone-300 focus:border-stone-500 focus:ring-stone-500/20 h-11 transition-all" 
+                    className="bg-white border-stone-200 text-stone-900 placeholder:text-stone-300 focus:border-stone-500 focus:ring-stone-500/20 h-10 lg:h-11 transition-all" 
                     placeholder="name@example.com"
                     required 
                 />
             </div>
             {message && <p className="text-sm font-medium text-stone-600 text-center bg-stone-100 p-2 rounded">{message}</p>}
-            <Button type="submit" className="w-full cursor-pointer bg-stone-900 hover:bg-stone-800 text-white font-bold h-11 shadow-lg shadow-stone-900/10 transition-all hover:scale-[1.01]" disabled={loading}>
+            <Button type="submit" className="w-full cursor-pointer bg-stone-900 hover:bg-stone-800 text-white font-bold h-10 lg:h-11 shadow-lg shadow-stone-900/10 transition-all hover:scale-[1.01]" disabled={loading}>
                 {loading ? <LoaderCircle className="animate-spin mr-2" /> : "Send Magic Link"}
                 {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
             </Button>
