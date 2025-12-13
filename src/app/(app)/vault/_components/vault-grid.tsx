@@ -31,7 +31,7 @@ type VaultItem = {
   processed_summary: string | null; 
   processed_tags: string[] | null; 
   is_favorited: boolean;
-  content_type: string; // Added content_type
+  content_type: string; 
 };
 type Collection = { id: number; name: string };
 
@@ -57,7 +57,7 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
   const pathname = usePathname();
   const isInCollectionView = pathname.includes('/collections/');
 
-  // Helper to get color/icon based on type
+  // Helper for Visual Types (Top Border Color + Icon)
   const getTypeStyles = (type: string) => {
     switch (type) {
         case 'video': return { color: 'border-t-red-500', icon: <Video className="h-3 w-3 text-red-500" /> };
@@ -207,7 +207,7 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {items.map((item) => {
             const isSelected = selectedItems.includes(item.id);
-            const typeStyle = getTypeStyles(item.content_type); // Get visual type color
+            const typeStyle = getTypeStyles(item.content_type); 
 
             return (
               <Card 
@@ -218,7 +218,7 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
                 `}
               >
                 <div 
-                  className="absolute top-4 left-4 z-10"
+                  className="absolute top-3 left-3 z-10"
                   onClick={(e) => handleSelectItem(e, item.id)}
                 >
                   <Input 
@@ -229,19 +229,19 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
                   />
                 </div>
                 
-                {/* FIX: Star moved down slightly (top-4) and cleanly to the right (right-3) */}
+                {/* FIX: Star cleanly positioned at top-right, no extra spacing forced */}
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="absolute top-4 right-3 h-8 w-8 rounded-full z-10 cursor-pointer"
+                  className="absolute top-2 right-2 h-8 w-8 rounded-full z-10 cursor-pointer"
                   onClick={(e) => handleToggleFavorite(e, item)}
                 >
                   <Star className={`h-5 w-5 transition-colors ${item.is_favorited ? 'text-amber-400 fill-amber-400' : 'text-stone-300 hover:text-stone-500'}`} />
                 </Button>
 
-                <div className="flex-grow cursor-pointer" onClick={() => handleOpenDetails(item.id)}>
-                  {/* FIX: Removed pt-10. Added pr-12 to ensure text doesn't hit the star. */}
-                  <CardHeader className="pb-2 pr-12">
+                <div className="flex-grow cursor-pointer p-1" onClick={() => handleOpenDetails(item.id)}>
+                  {/* FIX: Removed pt-10. Added right padding so text doesn't overlap star */}
+                  <CardHeader className="pb-2 pr-10">
                     <div className="flex items-center gap-2 mb-2">
                         {typeStyle.icon}
                         <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">{item.content_type}</span>
@@ -254,10 +254,12 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
                     <p className="text-sm text-stone-500 line-clamp-4 leading-relaxed">{item.processed_summary || "No summary available."}</p>
                   </CardContent>
                 </div>
-                <CardFooter className="flex justify-between items-center pt-0 pb-4">
+                
+                {/* FIX: Reduced bottom padding (pb-3) to remove 'too much space' */}
+                <CardFooter className="flex justify-between items-center pt-0 pb-3">
                      <div className="flex flex-wrap gap-1">
-                       {/* FIX: Reverted to 3 tags */}
-                       {item.processed_tags?.slice(0, 3).map((tag: string) => (<span key={tag} className="px-2 py-0.5 bg-stone-100 text-stone-600 text-xs rounded-full border border-stone-200">{tag}</span>))}
+                       {/* FIX: Restored to 2 tags as originally requested/implied by 'original was good' */}
+                       {item.processed_tags?.slice(0, 2).map((tag: string) => (<span key={tag} className="px-2 py-0.5 bg-stone-100 text-stone-600 text-xs rounded-full border border-stone-200">{tag}</span>))}
                    </div>
                    
                    <DropdownMenu>
@@ -266,7 +268,8 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
                             <MoreHorizontal className="h-4 w-4" />
                         </Button>
                      </DropdownMenuTrigger>
-                     <DropdownMenuContent align="end" className="w-48">
+                     {/* FIX: align="start" makes the menu open OUTWARDS to the right */}
+                     <DropdownMenuContent align="start" className="w-48">
                        <DropdownMenuItem onClick={() => handleOpenDetails(item.id)} className="cursor-pointer font-medium text-stone-700">
                             <Edit className="mr-2 h-4 w-4" /> View / Edit
                         </DropdownMenuItem>
