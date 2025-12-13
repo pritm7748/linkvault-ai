@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react' // Ensure useEffect is imported
 import { usePathname, useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -36,6 +36,15 @@ type Collection = { id: number; name: string };
 
 export function VaultGrid({ initialItems, collections }: { initialItems: VaultItem[], collections: Collection[] }) {
   const [items, setItems] = useState(initialItems)
+  
+  // --- THE FIX START ---
+  // This ensures the grid updates instantly when you add an item
+  // or when router.refresh() fetches new data.
+  useEffect(() => {
+    setItems(initialItems)
+  }, [initialItems])
+  // --- THE FIX END ---
+
   const [isDeleting, setIsDeleting] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<number | null>(null)
   
@@ -94,6 +103,7 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
         });
       }
       setItems(items.filter((item) => !idsToDelete.includes(item.id)));
+      router.refresh(); // Refresh server data to match UI
     } catch (error) { 
       console.error(error) 
     } finally { 
@@ -134,13 +144,13 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
             body: JSON.stringify({ collection_id: null }),
         });
         if (!response.ok) throw new Error('Failed to remove item from collection');
+        router.refresh();
     } catch (error) {
         console.error(error);
         setItems(originalItems);
     }
   }
 
-  // --- NEW: Bulk remove handler ---
   const handleBulkRemoveFromCollection = async () => {
     const originalItems = items;
     setItems(items.filter(item => !selectedItems.includes(item.id)));
@@ -152,6 +162,7 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
                 body: JSON.stringify({ collection_id: null }),
             });
         }
+        router.refresh();
     } catch (error) {
         console.error("Failed to bulk remove items", error);
         setItems(originalItems);
@@ -174,7 +185,6 @@ export function VaultGrid({ initialItems, collections }: { initialItems: VaultIt
           <p className="text-sm font-medium">{selectedItems.length} item(s) selected</p>
           <Button variant="secondary" size="sm" onClick={() => handleOpenMoveDialog(null)}>Move</Button>
 
-          {/* --- THE FIX: Conditional "Remove" or "Delete" button --- */}
           {isInCollectionView ? (
             <Button variant="destructive" size="sm" onClick={handleBulkRemoveFromCollection}>Remove</Button>
           ) : (
