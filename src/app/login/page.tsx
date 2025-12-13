@@ -136,25 +136,24 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        
-        {/* --- ROBUST BACKGROUND IMAGE HANDLING --- */}
-        {/* 1. Try PNG first */}
-        <img
-            src="/images/background.png"
-            alt="Background"
-            className="fixed inset-0 w-full h-full object-cover z-0"
-            onError={(e) => {
-                // If PNG fails, try JPG
-                const target = e.currentTarget;
-                if (target.src.endsWith('.png')) {
-                    target.src = "/images/background.jpg"; 
-                } else {
-                    // If JPG also fails, hide image so gradient shows
-                    target.style.display = 'none';
-                }
-            }}
-        />
+    <div 
+        style={{
+            // 1. Force the background image via inline style (highest priority)
+            backgroundImage: "url('/images/background.png')", 
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            // 2. Fallback color if image is missing
+            backgroundColor: '#1e1b4b', 
+            // 3. Force full screen dimensions
+            width: '100vw',
+            height: '100vh',
+            position: 'fixed',
+            inset: 0,
+            overflow: 'auto'
+        }}
+        className="flex items-center justify-center"
+    >
         
         {/* Dark Overlay */}
         <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-0 pointer-events-none" />
