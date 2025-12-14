@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { SheetClose } from '@/components/ui/sheet'
 import { 
-  LayoutDashboard, Folder, PlusCircle, LogOut, User, Star, X
+  LayoutDashboard, Folder, PlusCircle, LogOut, User, Star, X, MessageSquare 
 } from 'lucide-react' 
 import { 
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
@@ -32,8 +32,10 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
   const router = useRouter();
   const pathname = usePathname();
 
+  // --- ADDED "Chat" to the main items ---
   const mainNavItems = [
     { href: '/vault', label: 'All Items', icon: LayoutDashboard },
+    { href: '/chat', label: 'Chat', icon: MessageSquare },
     { href: '/profile', label: 'Profile', icon: User },
   ]
   
@@ -59,14 +61,13 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
     }
   };
 
-  // --- HELPER: Renders a Link, optionally wrapped in SheetClose for mobile ---
   const renderNavLink = (href: string, icon: React.ReactNode, label: string) => {
     const content = (
       <Link
         href={href}
         className={cn(
           'group flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-stone-100 cursor-pointer',
-          { 'bg-stone-100 text-stone-900 font-medium': pathname === href }
+          { 'bg-stone-100 text-stone-900 font-medium': pathname.startsWith(href) } // Changed strict equality to startsWith for /chat subpages
         )}
       >
         {icon}
@@ -91,7 +92,6 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
         
         <div className="flex-1 overflow-y-auto pt-4">
           <div className="px-2 lg:px-4">
-            {/* New Item Modal */}
             <CreateItemDialog />
 
             <nav className="grid items-start text-sm font-medium gap-1">
@@ -114,10 +114,8 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
               </div>
               <nav className="grid items-start text-sm font-medium gap-1">
                   
-                  {/* Favorites Link */}
                   {renderNavLink("/vault/favorites", <Star className="h-4 w-4" />, "Favorites")}
 
-                  {/* Dynamic Collections */}
                   {localCollections.map((collection) => {
                     const collectionContent = (
                         <Link
@@ -156,10 +154,8 @@ export function SideNav({ userEmail, collections, isSheet }: SideNavProps) {
           </div>
         </div>
         
-        {/* FOOTER: Profile and Logout */}
         <div className="mt-auto p-4 border-t bg-white">
           <div className="flex items-center justify-between">
-            {/* PROFILE LINK - Wrapped directly */}
             {(() => {
                 const profileLink = (
                     <Link href="/profile" className="flex-grow hover:bg-stone-100 p-2 rounded-md -m-2 transition-colors cursor-pointer block">
