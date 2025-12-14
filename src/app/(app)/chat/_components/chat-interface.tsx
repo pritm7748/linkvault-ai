@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { SendHorizontal, Bot, User, LoaderCircle, AlertCircle } from 'lucide-react'
+import { SendHorizontal, Bot, LoaderCircle, AlertCircle, ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 type Message = {
@@ -21,11 +22,13 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null) // State to show errors
+  const [error, setError] = useState<string | null>(null)
+  
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const router = useRouter()
 
-  // Auto-scroll to bottom
+  // Scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
@@ -45,9 +48,8 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
 
     const userMessage = input.trim()
     setInput('')
-    setError(null) // Clear previous errors
+    setError(null)
     
-    // 1. Optimistic Update
     const tempId = Date.now()
     setMessages(prev => [...prev, { id: tempId, role: 'user', content: userMessage }])
     setIsLoading(true)
@@ -59,20 +61,14 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
         body: JSON.stringify({ chatId, message: userMessage }),
       })
 
-      if (!response.ok) {
-        const errData = await response.json()
-        throw new Error(errData.error || 'Failed to get response')
-      }
-
       const data = await response.json()
+
+      if (!response.ok) throw new Error(data.error || 'Failed to get response')
       
-      // 2. Add AI Response
       setMessages(prev => [...prev, { id: data.id, role: 'assistant', content: data.content }])
     } catch (err: any) {
       console.error(err)
-      setError(err.message || "Something went wrong. Please try again.")
-      // Remove the user message if it failed? Or keep it with error?
-      // For now, we keep it but show an error banner.
+      setError(err.message || "Something went wrong.")
     } finally {
       setIsLoading(false)
     }
@@ -86,12 +82,28 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
   }
 
   return (
-    <div className="flex flex-col h-full w-full max-w-3xl mx-auto relative">
+    // FIX 1: Removed 'h-full' and 'overflow-hidden'. Now the page handles the scroll naturally.
+    <div className="flex flex-col w-full max-w-3xl mx-auto relative min-h-screen bg-white">
       
+      {/* --- HEADER (Back Button) --- */}
+      {/* FIX: Sticky header so the back button is always accessible */}
+      <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-stone-100 p-4 flex items-center">
+        <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => router.push('/chat')}
+            className="text-stone-500 hover:text-stone-900 gap-2 pl-0 hover:bg-transparent"
+        >
+            <ArrowLeft className="h-5 w-5" />
+            <span className="font-semibold text-lg">Back</span>
+        </Button>
+      </div>
+
       {/* --- MESSAGES AREA --- */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-32"> {/* Added pb-32 for input clearance */}
+      {/* FIX: Added 'pb-32' (bottom padding) so the last message isn't hidden behind the fixed input bar */}
+      <div className="flex-1 p-4 space-y-6 pb-32">
         {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50 mt-10">
+            <div className="flex flex-col items-center justify-center text-center space-y-4 opacity-50 py-20">
                 <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center">
                     <Bot className="h-8 w-8 text-stone-400" />
                 </div>
@@ -107,12 +119,13 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
                     )}
                     
                     <div className={cn(
-                        "max-w-[85%] rounded-2xl px-5 py-3 text-sm leading-relaxed shadow-sm break-words", // Added break-words
+                        // Restored your original styling + break-words for safety
+                        "max-w-[85%] rounded-2xl px-5 py-3 text-sm leading-relaxed shadow-sm break-words whitespace-pre-wrap", 
                         msg.role === 'user' 
                             ? "bg-stone-900 text-white rounded-br-none" 
                             : "bg-white border border-stone-200 text-stone-800 rounded-bl-none"
                     )}>
-                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                        {msg.content}
                     </div>
                 </div>
             ))
@@ -133,7 +146,6 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
             </div>
         )}
         
-        {/* Error Message */}
         {error && (
             <div className="flex justify-center">
                 <div className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm flex items-center gap-2 border border-red-100">
@@ -146,28 +158,32 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* --- INPUT AREA (Fixed at Bottom) --- */}
-      <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-[#FBFBF9] via-[#FBFBF9] to-transparent">
-        <div className="relative flex items-end gap-2 bg-white border border-stone-200 rounded-2xl p-2 shadow-lg shadow-stone-200/50 ring-1 ring-black/5 transition-all focus-within:ring-2 focus-within:ring-stone-900/20 focus-within:border-stone-400">
-            <Textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask a question..."
-                className="min-h-[48px] max-h-[150px] w-full resize-none border-0 shadow-none focus-visible:ring-0 py-3 px-3 text-base bg-transparent text-stone-900 placeholder:text-stone-400"
-                rows={1}
-            />
-            <Button 
-                onClick={() => handleSubmit()} 
-                disabled={!input.trim() || isLoading}
-                size="icon"
-                className="mb-1 shrink-0 bg-stone-900 hover:bg-stone-800 rounded-xl h-10 w-10 transition-transform active:scale-95"
-            >
-                <SendHorizontal className="h-5 w-5 text-white" />
-            </Button>
+      {/* --- INPUT AREA (Fixed) --- */}
+      {/* FIX: 'fixed bottom-0' makes it stick to the screen bottom. 
+          The inner div with 'max-w-3xl' ensures it stays aligned with the chat content. */}
+      <div className="fixed bottom-0 left-0 w-full p-4 bg-gradient-to-t from-[#FBFBF9] via-[#FBFBF9] to-transparent z-20">
+        <div className="max-w-3xl mx-auto w-full">
+            <div className="relative flex items-end gap-2 bg-white border border-stone-200 rounded-2xl p-2 shadow-lg shadow-stone-200/50 ring-1 ring-black/5 transition-all">
+                <Textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Ask a question..."
+                    className="min-h-[48px] max-h-[150px] w-full resize-none border-0 shadow-none focus-visible:ring-0 py-3 px-3 text-base bg-transparent text-stone-900 placeholder:text-stone-400"
+                    rows={1}
+                />
+                <Button 
+                    onClick={() => handleSubmit()} 
+                    disabled={!input.trim() || isLoading}
+                    size="icon"
+                    className="mb-1 shrink-0 bg-stone-900 hover:bg-stone-800 rounded-xl h-10 w-10 transition-transform active:scale-95 cursor-pointer"
+                >
+                    <SendHorizontal className="h-5 w-5 text-white" />
+                </Button>
+            </div>
+            <p className="text-center text-[10px] text-stone-400 mt-2">AI can make mistakes. Check important info.</p>
         </div>
-        <p className="text-center text-[10px] text-stone-400 mt-2">AI can make mistakes. Check important info.</p>
       </div>
     </div>
   )
