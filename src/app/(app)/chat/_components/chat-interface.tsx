@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation' // Added for Back Button
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { SendHorizontal, Bot, User, LoaderCircle, AlertCircle } from 'lucide-react'
+import { SendHorizontal, Bot, LoaderCircle, AlertCircle, ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 type Message = {
@@ -22,13 +23,17 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const router = useRouter()
 
+  // Scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
 
+  // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = '48px'; 
@@ -77,12 +82,27 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
   }
 
   return (
-    // FIX: Changed max-w-3xl to max-w-6xl for wider desktop view
-    <div className="flex flex-col h-full w-full max-w-6xl mx-auto relative bg-white md:border-x border-stone-100">
+    // FIX: Removed 'h-full' and 'overflow-hidden'. Now it flows naturally with the page.
+    <div className="flex flex-col w-full max-w-5xl mx-auto relative bg-white md:border-x border-stone-100 min-h-full">
       
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 pb-32">
+      {/* --- HEADER (Back Button) --- */}
+      <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-stone-100 p-4 flex items-center gap-2">
+        <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => router.push('/chat')}
+            className="text-stone-500 hover:text-stone-900 gap-2 pl-0 hover:bg-transparent"
+        >
+            <ArrowLeft className="h-5 w-5" />
+            <span className="font-semibold text-lg">Back to Chats</span>
+        </Button>
+      </div>
+
+      {/* --- MESSAGES AREA --- */}
+      {/* FIX: Added 'pb-40'. This creates a huge cushion at the bottom so text is never hidden behind the input. */}
+      <div className="flex-1 p-4 md:p-8 space-y-8 pb-40">
         {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50 mt-10">
+            <div className="flex flex-col items-center justify-center text-center space-y-4 opacity-50 py-20">
                 <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center">
                     <Bot className="h-8 w-8 text-stone-400" />
                 </div>
@@ -98,8 +118,7 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
                     )}
                     
                     <div className={cn(
-                        // FIX: Increased max-w-[85%] to max-w-[90%] for better space usage
-                        "max-w-[90%] md:max-w-[80%] rounded-2xl px-6 py-4 text-base leading-relaxed shadow-sm break-all whitespace-pre-wrap", 
+                        "max-w-[90%] md:max-w-[80%] rounded-2xl px-6 py-4 text-base leading-relaxed shadow-sm break-words whitespace-pre-wrap", 
                         msg.role === 'user' 
                             ? "bg-stone-900 text-white rounded-br-none" 
                             : "bg-white border border-stone-200 text-stone-800 rounded-bl-none"
@@ -137,26 +156,29 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* --- INPUT AREA --- */}
-      <div className="absolute bottom-0 left-0 w-full p-4 md:p-6 bg-gradient-to-t from-white via-white to-transparent">
-        <div className="relative flex items-end gap-2 bg-[#FBFBF9] border border-stone-200 rounded-3xl p-1.5 pl-4 shadow-xl shadow-stone-200/50 ring-1 ring-black/5 max-w-4xl mx-auto">
-            <Textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask a question..."
-                className="min-h-[48px] max-h-[150px] w-full resize-none border-0 shadow-none focus-visible:ring-0 py-3 px-0 text-base bg-transparent text-stone-900 placeholder:text-stone-400"
-                rows={1}
-            />
-            <Button 
-                onClick={() => handleSubmit()} 
-                disabled={!input.trim() || isLoading}
-                size="icon"
-                className="mb-1 shrink-0 bg-stone-900 hover:bg-stone-800 rounded-full h-10 w-10 transition-transform active:scale-95"
-            >
-                <SendHorizontal className="h-5 w-5 text-white" />
-            </Button>
+      {/* --- INPUT AREA (Fixed) --- */}
+      {/* FIX: 'fixed bottom-0' ensures it stays on screen. The wrapper centers it cleanly. */}
+      <div className="fixed bottom-0 left-0 w-full p-4 md:p-6 bg-gradient-to-t from-white via-white/90 to-transparent z-10 pointer-events-none">
+        <div className="max-w-5xl mx-auto w-full pointer-events-auto">
+            <div className="relative flex items-end gap-2 bg-[#FBFBF9] border border-stone-200 rounded-3xl p-1.5 pl-4 shadow-xl shadow-stone-200/50 ring-1 ring-black/5">
+                <Textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Ask a question..."
+                    className="min-h-[48px] max-h-[150px] w-full resize-none border-0 shadow-none focus-visible:ring-0 py-3 px-0 text-base bg-transparent text-stone-900 placeholder:text-stone-400"
+                    rows={1}
+                />
+                <Button 
+                    onClick={() => handleSubmit()} 
+                    disabled={!input.trim() || isLoading}
+                    size="icon"
+                    className="mb-1 shrink-0 bg-stone-900 hover:bg-stone-800 rounded-full h-10 w-10 transition-transform active:scale-95 cursor-pointer"
+                >
+                    <SendHorizontal className="h-5 w-5 text-white" />
+                </Button>
+            </div>
         </div>
       </div>
     </div>
