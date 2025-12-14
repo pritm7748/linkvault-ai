@@ -28,12 +28,10 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const router = useRouter()
 
-  // Scroll to bottom on load and new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
 
-  // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = '48px'; 
@@ -82,21 +80,24 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
   }
 
   return (
-    <div className="flex flex-col w-full min-h-screen bg-white relative">
+    // Container handles max-width and centering relative to the Content Area (not the window)
+    <div className="flex flex-col w-full max-w-3xl mx-auto min-h-full">
       
-      {/* --- FIX 1: Minimalist Back Arrow (Fixed Top-Left) --- */}
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        onClick={() => router.push('/chat')}
-        className="fixed top-6 left-4 z-50 h-10 w-10 bg-white/80 backdrop-blur-sm border border-stone-200 rounded-full shadow-sm text-stone-500 hover:text-stone-900 hover:bg-white"
-      >
-        <ArrowLeft className="h-5 w-5" />
-      </Button>
+      {/* --- FIX 1: Back Button (In Flow) --- */}
+      {/* Placed inside the div, so it respects margins and sidebar */}
+      <div className="pt-2 pb-6 sticky top-0 bg-[#FBFBF9]/90 backdrop-blur-sm z-10">
+        <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => router.push('/chat')}
+            className="rounded-full hover:bg-stone-200"
+        >
+            <ArrowLeft className="h-5 w-5 text-stone-600" />
+        </Button>
+      </div>
 
       {/* --- MESSAGES AREA --- */}
-      {/* 'max-w-3xl mx-auto' centers the content column */}
-      <div className="flex-1 w-full max-w-3xl mx-auto p-4 pt-20 pb-40 space-y-8">
+      <div className="flex-1 space-y-8 pb-4">
         {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center space-y-4 opacity-50 py-20">
                 <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center">
@@ -108,7 +109,7 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
             messages.map((msg) => (
                 <div key={msg.id} className={cn("flex gap-4 w-full", msg.role === 'user' ? "justify-end" : "justify-start")}>
                     {msg.role === 'assistant' && (
-                        <div className="w-9 h-9 rounded-full bg-stone-50 border border-stone-100 flex items-center justify-center shrink-0 mt-1">
+                        <div className="w-9 h-9 rounded-full bg-white border border-stone-200 flex items-center justify-center shrink-0 mt-1">
                             <Bot className="h-5 w-5 text-stone-500" />
                         </div>
                     )}
@@ -127,7 +128,7 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
         
         {isLoading && (
             <div className="flex gap-4">
-                <div className="w-9 h-9 rounded-full bg-stone-50 border border-stone-100 flex items-center justify-center mt-1">
+                <div className="w-9 h-9 rounded-full bg-white border border-stone-200 flex items-center justify-center mt-1">
                     <LoaderCircle className="h-5 w-5 text-stone-400 animate-spin" />
                 </div>
                 <div className="bg-white border border-stone-200 rounded-2xl rounded-bl-none px-6 py-5 shadow-sm flex items-center">
@@ -152,16 +153,16 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* --- FIX 2: Input Area (Perfectly Centered) --- */}
-      {/* 'left-1/2 -translate-x-1/2' guarantees it stays in the middle of the screen */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-3xl px-4 z-40">
-        <div className="relative flex items-end gap-2 bg-[#FBFBF9] border border-stone-200 rounded-3xl p-1.5 pl-4 shadow-xl shadow-stone-200/50 ring-1 ring-black/5">
+      {/* --- FIX 2: Sticky Bottom Input --- */}
+      {/* 'sticky bottom-0' ensures it stays visible at the bottom of the scroll container (Main Layout) */}
+      <div className="sticky bottom-0 pb-6 pt-2 bg-gradient-to-t from-[#FBFBF9] via-[#FBFBF9] to-transparent z-20">
+        <div className="relative flex items-end gap-2 bg-white border border-stone-200 rounded-3xl p-1.5 pl-4 shadow-xl shadow-stone-200/50 ring-1 ring-black/5">
             <Textarea
                 ref={textareaRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask about your notes..."
+                placeholder="Ask a question..."
                 className="min-h-[48px] max-h-[150px] w-full resize-none border-0 shadow-none focus-visible:ring-0 py-3 px-0 text-base bg-transparent text-stone-900 placeholder:text-stone-400"
                 rows={1}
             />
@@ -174,6 +175,7 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
                 <SendHorizontal className="h-5 w-5 text-white" />
             </Button>
         </div>
+        <p className="text-center text-[10px] text-stone-400 mt-2">AI can make mistakes. Check important info.</p>
       </div>
     </div>
   )
