@@ -1,5 +1,6 @@
 import { createServer } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { MessageSquarePlus } from 'lucide-react'
 import { redirect } from 'next/navigation'
@@ -33,27 +34,30 @@ export default async function ChatDashboard() {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl mx-auto py-8 px-4">
+    <div className="flex flex-col gap-8 w-full p-6 md:p-10">
       <div className="flex items-center justify-between">
         <div>
-            <h1 className="text-3xl font-serif font-bold text-stone-900">Chat with Vault</h1>
-            <p className="text-stone-500 mt-1">Ask questions and get answers from your saved content.</p>
+            <h1 className="text-3xl md:text-4xl font-serif font-bold text-stone-900">Chat History</h1>
+            <p className="text-stone-500 mt-2 text-lg">Pick up where you left off or start a new inquiry.</p>
         </div>
         <form action={createNewChat}>
-            <Button size="lg" className="bg-stone-900 hover:bg-stone-800 text-white shadow-md cursor-pointer">
+            <Button size="lg" className="bg-stone-900 hover:bg-stone-800 text-white shadow-lg cursor-pointer h-12 px-6 text-base">
                 <MessageSquarePlus className="mr-2 h-5 w-5" /> New Chat
             </Button>
         </form>
       </div>
 
-      <div className="grid gap-4">
+      {/* FIX: Grid layout to utilize desktop space */}
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {chats && chats.length > 0 ? (
             chats.map((chat) => (
                 <ChatListItem key={chat.id} chat={chat} />
             ))
         ) : (
-            <div className="text-center py-20 border-2 border-dashed border-stone-200 rounded-lg">
-                <MessageSquarePlus className="h-12 w-12 text-stone-300 mx-auto mb-4" />
+            <div className="col-span-full flex flex-col items-center justify-center py-32 border-2 border-dashed border-stone-200 rounded-2xl bg-stone-50/50">
+                <div className="bg-white p-4 rounded-full shadow-sm mb-4">
+                    <MessageSquarePlus className="h-10 w-10 text-stone-300" />
+                </div>
                 <h3 className="text-xl font-semibold text-stone-900">No conversations yet</h3>
                 <p className="text-stone-500 mt-2">Start a new chat to explore your vault using AI.</p>
             </div>
