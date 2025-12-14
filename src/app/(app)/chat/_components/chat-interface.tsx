@@ -21,16 +21,14 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null) // State to show errors
+  const [error, setError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
 
-  // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = '48px'; 
@@ -45,9 +43,8 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
 
     const userMessage = input.trim()
     setInput('')
-    setError(null) // Clear previous errors
+    setError(null)
     
-    // 1. Optimistic Update
     const tempId = Date.now()
     setMessages(prev => [...prev, { id: tempId, role: 'user', content: userMessage }])
     setIsLoading(true)
@@ -59,20 +56,14 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
         body: JSON.stringify({ chatId, message: userMessage }),
       })
 
-      if (!response.ok) {
-        const errData = await response.json()
-        throw new Error(errData.error || 'Failed to get response')
-      }
-
       const data = await response.json()
+
+      if (!response.ok) throw new Error(data.error || 'Failed to get response')
       
-      // 2. Add AI Response
       setMessages(prev => [...prev, { id: data.id, role: 'assistant', content: data.content }])
     } catch (err: any) {
       console.error(err)
-      setError(err.message || "Something went wrong. Please try again.")
-      // Remove the user message if it failed? Or keep it with error?
-      // For now, we keep it but show an error banner.
+      setError(err.message || "Something went wrong.")
     } finally {
       setIsLoading(false)
     }
@@ -86,10 +77,10 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
   }
 
   return (
-    <div className="flex flex-col h-full w-full max-w-3xl mx-auto relative">
+    // FIX: Changed max-w-3xl to max-w-6xl for wider desktop view
+    <div className="flex flex-col h-full w-full max-w-6xl mx-auto relative bg-white md:border-x border-stone-100">
       
-      {/* --- MESSAGES AREA --- */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-32"> {/* Added pb-32 for input clearance */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 pb-32">
         {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50 mt-10">
                 <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center">
@@ -99,41 +90,41 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
             </div>
         ) : (
             messages.map((msg) => (
-                <div key={msg.id} className={cn("flex gap-3 max-w-full", msg.role === 'user' ? "justify-end" : "justify-start")}>
+                <div key={msg.id} className={cn("flex gap-4 max-w-full", msg.role === 'user' ? "justify-end" : "justify-start")}>
                     {msg.role === 'assistant' && (
-                        <div className="w-8 h-8 rounded-full bg-white border border-stone-200 flex items-center justify-center shrink-0 mt-1 shadow-sm">
-                            <Bot className="h-4 w-4 text-stone-600" />
+                        <div className="w-9 h-9 rounded-full bg-stone-50 border border-stone-100 flex items-center justify-center shrink-0 mt-1">
+                            <Bot className="h-5 w-5 text-stone-500" />
                         </div>
                     )}
                     
                     <div className={cn(
-                        "max-w-[85%] rounded-2xl px-5 py-3 text-sm leading-relaxed shadow-sm break-words", // Added break-words
+                        // FIX: Increased max-w-[85%] to max-w-[90%] for better space usage
+                        "max-w-[90%] md:max-w-[80%] rounded-2xl px-6 py-4 text-base leading-relaxed shadow-sm break-all whitespace-pre-wrap", 
                         msg.role === 'user' 
                             ? "bg-stone-900 text-white rounded-br-none" 
                             : "bg-white border border-stone-200 text-stone-800 rounded-bl-none"
                     )}>
-                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                        {msg.content}
                     </div>
                 </div>
             ))
         )}
         
         {isLoading && (
-            <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-white border border-stone-200 flex items-center justify-center mt-1 shadow-sm">
-                    <LoaderCircle className="h-4 w-4 text-stone-400 animate-spin" />
+            <div className="flex gap-4">
+                <div className="w-9 h-9 rounded-full bg-stone-50 border border-stone-100 flex items-center justify-center mt-1">
+                    <LoaderCircle className="h-5 w-5 text-stone-400 animate-spin" />
                 </div>
-                <div className="bg-white border border-stone-200 rounded-2xl rounded-bl-none px-5 py-4 shadow-sm flex items-center">
-                    <span className="flex gap-1">
-                        <span className="w-1.5 h-1.5 bg-stone-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                        <span className="w-1.5 h-1.5 bg-stone-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                        <span className="w-1.5 h-1.5 bg-stone-400 rounded-full animate-bounce"></span>
+                <div className="bg-white border border-stone-200 rounded-2xl rounded-bl-none px-6 py-5 shadow-sm flex items-center">
+                    <span className="flex gap-1.5">
+                        <span className="w-2 h-2 bg-stone-300 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                        <span className="w-2 h-2 bg-stone-300 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                        <span className="w-2 h-2 bg-stone-300 rounded-full animate-bounce"></span>
                     </span>
                 </div>
             </div>
         )}
         
-        {/* Error Message */}
         {error && (
             <div className="flex justify-center">
                 <div className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm flex items-center gap-2 border border-red-100">
@@ -146,28 +137,27 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* --- INPUT AREA (Fixed at Bottom) --- */}
-      <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-[#FBFBF9] via-[#FBFBF9] to-transparent">
-        <div className="relative flex items-end gap-2 bg-white border border-stone-200 rounded-2xl p-2 shadow-lg shadow-stone-200/50 ring-1 ring-black/5 transition-all focus-within:ring-2 focus-within:ring-stone-900/20 focus-within:border-stone-400">
+      {/* --- INPUT AREA --- */}
+      <div className="absolute bottom-0 left-0 w-full p-4 md:p-6 bg-gradient-to-t from-white via-white to-transparent">
+        <div className="relative flex items-end gap-2 bg-[#FBFBF9] border border-stone-200 rounded-3xl p-1.5 pl-4 shadow-xl shadow-stone-200/50 ring-1 ring-black/5 max-w-4xl mx-auto">
             <Textarea
                 ref={textareaRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask a question..."
-                className="min-h-[48px] max-h-[150px] w-full resize-none border-0 shadow-none focus-visible:ring-0 py-3 px-3 text-base bg-transparent text-stone-900 placeholder:text-stone-400"
+                className="min-h-[48px] max-h-[150px] w-full resize-none border-0 shadow-none focus-visible:ring-0 py-3 px-0 text-base bg-transparent text-stone-900 placeholder:text-stone-400"
                 rows={1}
             />
             <Button 
                 onClick={() => handleSubmit()} 
                 disabled={!input.trim() || isLoading}
                 size="icon"
-                className="mb-1 shrink-0 bg-stone-900 hover:bg-stone-800 rounded-xl h-10 w-10 transition-transform active:scale-95"
+                className="mb-1 shrink-0 bg-stone-900 hover:bg-stone-800 rounded-full h-10 w-10 transition-transform active:scale-95"
             >
                 <SendHorizontal className="h-5 w-5 text-white" />
             </Button>
         </div>
-        <p className="text-center text-[10px] text-stone-400 mt-2">AI can make mistakes. Check important info.</p>
       </div>
     </div>
   )

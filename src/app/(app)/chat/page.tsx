@@ -1,28 +1,23 @@
 import { createServer } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
-import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { MessageSquarePlus, Clock, ChevronRight } from 'lucide-react'
+import { MessageSquarePlus } from 'lucide-react'
 import { redirect } from 'next/navigation'
+import { ChatListItem } from './_components/chat-list-item'
 
 export default async function ChatDashboard() {
   const cookieStore = cookies()
   const supabase = createServer(cookieStore)
   
-  // Fetch existing chats
   const { data: chats } = await supabase
     .from('chats')
     .select('*')
     .order('updated_at', { ascending: false })
 
-  // Server Action to create a new chat
   async function createNewChat() {
     'use server'
     const cookieStore = cookies()
     const supabase = createServer(cookieStore)
-    
-    // --- FIX: Correctly destructure the user object ---
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
@@ -54,24 +49,7 @@ export default async function ChatDashboard() {
       <div className="grid gap-4">
         {chats && chats.length > 0 ? (
             chats.map((chat) => (
-                <Link href={`/chat/${chat.id}`} key={chat.id}>
-                    <Card className="hover:border-stone-400 transition-colors cursor-pointer group">
-                        <CardContent className="flex items-center justify-between p-4">
-                            <div className="flex items-center gap-4">
-                                <div className="bg-stone-100 p-2 rounded-full text-stone-500 group-hover:bg-stone-200 transition-colors">
-                                    <Clock className="h-5 w-5" />
-                                </div>
-                                <div>
-                                    <h3 className="font-semibold text-stone-900">{chat.title || "Untitled Conversation"}</h3>
-                                    <p className="text-xs text-stone-400">
-                                        {new Date(chat.updated_at).toLocaleDateString()} at {new Date(chat.updated_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                    </p>
-                                </div>
-                            </div>
-                            <ChevronRight className="h-5 w-5 text-stone-300 group-hover:text-stone-500" />
-                        </CardContent>
-                    </Card>
-                </Link>
+                <ChatListItem key={chat.id} chat={chat} />
             ))
         ) : (
             <div className="text-center py-20 border-2 border-dashed border-stone-200 rounded-lg">
