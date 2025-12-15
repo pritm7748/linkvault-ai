@@ -6,14 +6,15 @@ import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Clock, Pencil, Trash2, Check, X, MessageSquare } from 'lucide-react'
-import { renameChat, deleteChat } from '../actions'
+import { Clock, Pencil, Trash2, Check, X, MessageSquare, Pin } from 'lucide-react'
+import { renameChat, deleteChat, togglePinChat } from '../actions' // Import togglePinChat
 
 type ChatListItemProps = {
   chat: {
     id: number;
     title: string | null;
     updated_at: string;
+    is_pinned: boolean | null; // Add type
   }
 }
 
@@ -40,12 +41,19 @@ export function ChatListItem({ chat }: ChatListItemProps) {
     router.refresh()
   }
 
+  // --- NEW PIN HANDLER ---
+  const handlePin = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // Optimistic UI could happen here, but router.refresh works fast enough usually
+    await togglePinChat(chat.id, chat.is_pinned || false)
+  }
+
   if (isDeleting) return null; 
 
   return (
     <div className="group relative w-full">
         {isEditing ? (
-            // Editing State (Horizontal Bar)
             <div className="flex items-center gap-4 p-3 bg-white border border-stone-300 rounded-lg shadow-sm">
                 <Input 
                     value={newTitle} 
@@ -64,12 +72,12 @@ export function ChatListItem({ chat }: ChatListItemProps) {
             </div>
         ) : (
             <Link href={`/chat/${chat.id}`} className="block w-full">
-                <Card className="flex flex-row items-center justify-between p-4 border-stone-200 hover:border-stone-400 hover:shadow-md transition-all cursor-pointer bg-white group">
+                <Card className={`flex flex-row items-center justify-between p-4 border-stone-200 hover:border-stone-400 hover:shadow-md transition-all cursor-pointer bg-white group ${chat.is_pinned ? 'border-l-4 border-l-stone-900 bg-stone-50/50' : ''}`}>
                     
                     {/* Left: Icon + Text */}
                     <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className="bg-stone-50 p-3 rounded-full border border-stone-100 text-stone-400 group-hover:text-purple-600 group-hover:bg-purple-50 group-hover:border-purple-100 transition-colors">
-                            <MessageSquare className="h-5 w-5" />
+                        <div className={`p-3 rounded-full border border-stone-100 transition-colors ${chat.is_pinned ? 'bg-stone-900 text-white' : 'bg-stone-50 text-stone-400 group-hover:text-purple-600 group-hover:bg-purple-50 group-hover:border-purple-100'}`}>
+                            {chat.is_pinned ? <Pin className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
                         </div>
                         <div className="flex flex-col gap-0.5 min-w-0">
                             <h3 className="font-bold text-lg text-stone-900 truncate group-hover:text-purple-700 transition-colors">
@@ -82,8 +90,20 @@ export function ChatListItem({ chat }: ChatListItemProps) {
                         </div>
                     </div>
 
-                    {/* Right: Actions (Visible on Hover) */}
+                    {/* Right: Actions */}
                     <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity pl-4 border-l border-transparent md:border-stone-100 md:group-hover:border-stone-200">
+                        
+                        {/* PIN BUTTON */}
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className={`h-9 w-9 hover:bg-stone-100 ${chat.is_pinned ? 'text-stone-900' : 'text-stone-400 hover:text-stone-700'}`}
+                            onClick={handlePin}
+                            title={chat.is_pinned ? "Unpin" : "Pin to top"}
+                        >
+                            <Pin className={`h-4 w-4 ${chat.is_pinned ? 'fill-current' : ''}`} />
+                        </Button>
+
                         <Button 
                             variant="ghost" 
                             size="icon" 

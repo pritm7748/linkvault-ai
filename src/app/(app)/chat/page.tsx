@@ -1,19 +1,34 @@
 import { createServer } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
-import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { MessageSquarePlus } from 'lucide-react'
+import { MessageSquarePlus, SearchX } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { ChatListItem } from './_components/chat-list-item'
 
-export default async function ChatDashboard() {
+// 1. Accept searchParams prop
+export default async function ChatDashboard({
+  searchParams,
+}: {
+  searchParams?: { q?: string }
+}) {
+  const query = searchParams?.q || ''
   const cookieStore = cookies()
   const supabase = createServer(cookieStore)
   
-  const { data: chats } = await supabase
+  // 2. Build Query
+  let dbQuery = supabase
     .from('chats')
     .select('*')
+    // Sort by PINNED first (descending: true > false), then by DATE
+    .order('is_pinned', { ascending: false })
     .order('updated_at', { ascending: false })
+
+  // 3. Apply Search Filter if query exists
+  if (query) {
+    dbQuery = dbQuery.ilike('title', `%${query}%`)
+  }
+
+  const { data: chats } = await dbQuery
 
   async function createNewChat() {
     'use server'
@@ -47,19 +62,21 @@ export default async function ChatDashboard() {
         </form>
       </div>
 
-      {/* FIX: Switched from Grid to Vertical Stack */}
       <div className="flex flex-col gap-3">
         {chats && chats.length > 0 ? (
             chats.map((chat) => (
                 <ChatListItem key={chat.id} chat={chat} />
             ))
         ) : (
+            // Empty State
             <div className="col-span-full flex flex-col items-center justify-center py-32 border-2 border-dashed border-stone-200 rounded-2xl bg-stone-50/50">
                 <div className="bg-white p-4 rounded-full shadow-sm mb-4">
-                    <MessageSquarePlus className="h-10 w-10 text-stone-300" />
+                    {query ? <SearchX className="h-10 w-10 text-stone-300" /> : <MessageSquarePlus className="h-10 w-10 text-stone-300" />}
                 </div>
-                <h3 className="text-xl font-semibold text-stone-900">No conversations yet</h3>
-                <p className="text-stone-500 mt-2">Start a new chat to explore your vault using AI.</p>
+                <h3 className="text-xl font-semibold text-stone-900">
+                    {query ? `No results for "${query}"` : "No conversations yet"}
+                </h3>
+                {!query && <p className="text-stone-500 mt-2">Start a new chat to explore your vault using AI.</p>}
             </div>
         )}
       </div>

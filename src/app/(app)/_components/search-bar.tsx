@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { Input } from '@/components/ui/input' // Reverted to Input for stability
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { Input } from '@/components/ui/input' 
 import { Button } from '@/components/ui/button'
 import { Search, Wand2 } from 'lucide-react'
 import { QandADialog } from './q-and-a-dialog'
@@ -17,6 +17,7 @@ type Source = {
 export function SearchBar() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const pathname = usePathname() // --- ADDED: To check current page ---
   
   const [query, setQuery] = useState(searchParams.get('q') || '')
 
@@ -30,9 +31,35 @@ export function SearchBar() {
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
+  // Sync local state with URL params when they change
+  useEffect(() => {
+    setQuery(searchParams.get('q') || '')
+  }, [searchParams])
+
+  // --- LOGIC 1: Hide Search on specific chat pages (/chat/123) ---
+  // If path starts with /chat/ and has an ID after it
+  if (pathname.match(/^\/chat\/\d+/)) {
+    return <div className="w-full flex-1" /> // Return empty spacer to maintain layout
+  }
+
+  // Determine context
+  const isChatDashboard = pathname === '/chat'
+
   const executeSearch = () => {
-    if (!query.trim()) return;
-    router.push(`/search?q=${encodeURIComponent(query)}`);
+    // Allow clearing search by searching empty string
+    if (!query.trim()) {
+        if (isChatDashboard) router.replace('/chat');
+        else router.push('/vault');
+        return;
+    }
+
+    if (isChatDashboard) {
+        // On Chat Dashboard: Update URL to filter the list
+        router.replace(`/chat?q=${encodeURIComponent(query)}`);
+    } else {
+        // On Vault/Other: Redirect to Vault with search query
+        router.push(`/vault?q=${encodeURIComponent(query)}`);
+    }
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -81,42 +108,42 @@ export function SearchBar() {
     <>
       <div className="w-full flex items-center gap-2">
         
-        {/* INPUT: flex-1 ensures it eats up all the space saved by the smaller buttons */}
         <div className="relative flex-1 min-w-0"> 
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
             name="query"
-            placeholder="Search..."
-            className="w-full bg-background pl-9 shadow-none h-10 text-base md:text-sm" // text-base prevents iOS zoom
+            // --- LOGIC 2: Dynamic Placeholder ---
+            placeholder={isChatDashboard ? "Search conversation titles..." : "Search..."}
+            className="w-full bg-background pl-9 shadow-none h-10 text-base md:text-sm"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
           />
         </div>
 
-        {/* SEARCH BUTTON: Icon only on Mobile, Text on Desktop */}
         <Button 
             variant="outline" 
             onClick={executeSearch} 
             disabled={!query}
             className="shrink-0 px-3 md:px-4"
         >
-            {/* The margin right (mr-2) only applies on desktop when text is visible */}
             <Search className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Search</span>
         </Button>
 
-        {/* ASK BUTTON: Keep concise */}
-        <Button 
-            onClick={handleAskAI} 
-            disabled={!query || isLoadingAnswer} 
-            className="bg-purple-600 hover:bg-purple-700 shrink-0 px-3 md:px-4"
-        >
-          <Wand2 className="mr-2 h-4 w-4" />
-          <span className="hidden md:inline">Ask AI</span>
-          <span className="md:hidden">Ask</span>
-        </Button>
+        {/* --- LOGIC 3: Hide "Ask AI" on Chat Dashboard --- */}
+        {!isChatDashboard && (
+            <Button 
+                onClick={handleAskAI} 
+                disabled={!query || isLoadingAnswer} 
+                className="bg-purple-600 hover:bg-purple-700 shrink-0 px-3 md:px-4"
+            >
+            <Wand2 className="mr-2 h-4 w-4" />
+            <span className="hidden md:inline">Ask AI</span>
+            <span className="md:hidden">Ask</span>
+            </Button>
+        )}
       </div>
 
       <QandADialog 
