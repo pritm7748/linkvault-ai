@@ -82,36 +82,38 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
   }
 
   return (
-    <div className="flex flex-col h-full w-full bg-white relative">
+    <div className="w-full min-h-screen bg-white">
       
       {/* Back button - Fixed position */}
-      <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => router.push('/chat')}
-          className="absolute top-4 left-4 z-10 text-stone-500 hover:text-stone-900 hover:bg-stone-100"
-      >
-          <ArrowLeft className="h-5 w-5" />
-      </Button>
+      <div className="fixed top-4 left-4 md:left-[316px] z-50">
+        <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => router.push('/chat')}
+            className="text-stone-500 hover:text-stone-900 hover:bg-stone-100"
+        >
+            <ArrowLeft className="h-5 w-5" />
+        </Button>
+      </div>
 
-      {/* --- MESSAGES (Scrollable) --- */}
-      <div className="flex-1 overflow-y-auto pt-16">
-        <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-6">
-          {messages.length === 0 ? (
-              <div className="h-[60vh] flex flex-col items-center justify-center text-center space-y-4">
-                  <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center">
-                      <Bot className="h-8 w-8 text-stone-400" />
-                  </div>
-                  <div>
-                      <h2 className="text-xl font-semibold text-stone-800 mb-2">Ask me anything</h2>
-                      <p className="text-stone-500 text-sm">I'll search through your vault to find answers.</p>
-                  </div>
-              </div>
-          ) : (
-              messages.map((msg) => (
+      {/* --- MESSAGES --- */}
+      <div className="max-w-3xl mx-auto px-4 md:px-6 pt-20 pb-32">
+        {messages.length === 0 ? (
+            <div className="h-[70vh] flex flex-col items-center justify-center text-center space-y-4">
+                <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center">
+                    <Bot className="h-8 w-8 text-stone-400" />
+                </div>
+                <div>
+                    <h2 className="text-xl font-semibold text-stone-800 mb-2">Ask me anything</h2>
+                    <p className="text-stone-500 text-sm">I'll search through your vault to find answers.</p>
+                </div>
+            </div>
+        ) : (
+            <div className="space-y-6">
+              {messages.map((msg) => (
                   <div key={msg.id} className="w-full">
                       {msg.role === 'assistant' && (
-                          <div className="flex gap-4 mb-4">
+                          <div className="flex gap-4">
                               <div className="w-8 h-8 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center shrink-0">
                                   <Bot className="h-4 w-4 text-stone-600" />
                               </div>
@@ -124,7 +126,7 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
                       )}
                       
                       {msg.role === 'user' && (
-                          <div className="flex gap-4 mb-4 justify-end">
+                          <div className="flex gap-4 justify-end">
                               <div className="flex-1 pt-1 flex justify-end">
                                   <div className="text-stone-800 text-[15px] leading-relaxed whitespace-pre-wrap max-w-[80%]">
                                       {msg.content}
@@ -136,40 +138,40 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
                           </div>
                       )}
                   </div>
-              ))
-          )}
-          
-          {isLoading && (
-              <div className="flex gap-4">
-                  <div className="w-8 h-8 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center shrink-0">
-                      <LoaderCircle className="h-4 w-4 text-stone-400 animate-spin" />
+              ))}
+              
+              {isLoading && (
+                  <div className="flex gap-4">
+                      <div className="w-8 h-8 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center shrink-0">
+                          <LoaderCircle className="h-4 w-4 text-stone-400 animate-spin" />
+                      </div>
+                      <div className="flex-1 pt-1">
+                          <span className="flex gap-1">
+                              <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                              <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                              <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce"></span>
+                          </span>
+                      </div>
                   </div>
-                  <div className="flex-1 pt-1">
-                      <span className="flex gap-1">
-                          <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                          <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                          <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce"></span>
-                      </span>
+              )}
+              
+              {error && (
+                  <div className="flex justify-center">
+                      <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm flex items-center gap-2 border border-red-100">
+                          <AlertCircle className="h-4 w-4" />
+                          {error}
+                      </div>
                   </div>
-              </div>
-          )}
-          
-          {error && (
-              <div className="flex justify-center">
-                  <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm flex items-center gap-2 border border-red-100">
-                      <AlertCircle className="h-4 w-4" />
-                      {error}
-                  </div>
-              </div>
-          )}
-          
-          <div ref={messagesEndRef} />
-        </div>
+              )}
+            </div>
+        )}
+        
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* --- INPUT (Fixed) --- */}
-      <div className="border-t border-stone-200 bg-white shrink-0">
-        <div className="max-w-3xl mx-auto px-4 md:px-6 py-3">
+      {/* --- INPUT (Fixed at bottom) --- */}
+      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent pt-4 pb-4">
+        <div className="max-w-3xl mx-auto px-4 md:px-6">
           <div className="relative flex items-end gap-2 bg-white border border-stone-300 rounded-2xl px-3 py-1.5 shadow-sm hover:shadow-md transition-shadow">
               <Textarea
                   ref={textareaRef}
