@@ -38,3 +38,13 @@ export async function togglePinChat(chatId: number, currentStatus: boolean) {
   revalidatePath('/chat')
   return { success: true }
 }
+
+// ... existing imports ...
+
+// --- ADD THIS NEW FUNCTION ---
+export async function getChatTitle(chatId: number) {
+  const cookieStore = cookies()
+  const supabase = createServer(cookieStore)
+  const { data } = await supabase.from('chats').select('title').eq('id', chatId).single()
+  return data?.title || "Conversation"
+}
