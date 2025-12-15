@@ -82,106 +82,117 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
   }
 
   return (
-    // FIX: Main Container uses fixed height calculation to fit inside the dashboard
-    // 'h-[calc(100vh-140px)]' accounts for the app sidebar/header padding
-    // This creates a rigid "Window" that doesn't scroll with the browser
-    <div className="flex flex-col h-[calc(100vh-120px)] md:h-[calc(100vh-140px)] w-full max-w-4xl mx-auto bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-white">
       
-      {/* --- 1. HEADER (Fixed) --- */}
-      {/* Takes up fixed height, never moves. */}
-      <div className="h-14 border-b border-stone-100 flex items-center px-4 bg-stone-50/50 shrink-0">
+      {/* --- HEADER (Fixed) --- */}
+      <div className="h-14 border-b border-stone-200 flex items-center px-4 md:px-6 bg-white shrink-0">
         <Button 
             variant="ghost" 
-            size="sm" 
+            size="icon" 
             onClick={() => router.push('/chat')}
-            className="text-stone-500 hover:text-stone-900 gap-2 -ml-2"
+            className="text-stone-500 hover:text-stone-900"
         >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="font-medium">Back</span>
+            <ArrowLeft className="h-5 w-5" />
         </Button>
       </div>
 
-      {/* --- 2. MESSAGES (Scrollable) --- */}
-      {/* flex-1 makes it take all remaining space. overflow-y-auto puts the scrollbar HERE. */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-white">
-        {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50">
-                <div className="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center">
-                    <Bot className="h-6 w-6 text-stone-400" />
-                </div>
-                <p className="text-stone-500 text-sm font-medium">Ask questions about your vault.</p>
-            </div>
-        ) : (
-            messages.map((msg) => (
-                <div key={msg.id} className={cn("flex gap-3 w-full", msg.role === 'user' ? "justify-end" : "justify-start")}>
-                    {msg.role === 'assistant' && (
-                        <div className="w-8 h-8 rounded-full bg-stone-50 border border-stone-100 flex items-center justify-center shrink-0 mt-1">
-                            <Bot className="h-4 w-4 text-stone-500" />
-                        </div>
-                    )}
-                    
-                    <div className={cn(
-                        "max-w-[85%] rounded-2xl px-5 py-3 text-sm leading-relaxed shadow-sm break-words whitespace-pre-wrap", 
-                        msg.role === 'user' 
-                            ? "bg-stone-900 text-white rounded-br-none" 
-                            : "bg-white border border-stone-200 text-stone-800 rounded-bl-none"
-                    )}>
-                        {msg.content}
-                    </div>
-                </div>
-            ))
-        )}
-        
-        {isLoading && (
-            <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-stone-50 border border-stone-100 flex items-center justify-center mt-1">
-                    <LoaderCircle className="h-4 w-4 text-stone-400 animate-spin" />
-                </div>
-                <div className="bg-white border border-stone-200 rounded-2xl rounded-bl-none px-5 py-4 shadow-sm flex items-center">
-                    <span className="flex gap-1">
-                        <span className="w-1.5 h-1.5 bg-stone-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                        <span className="w-1.5 h-1.5 bg-stone-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                        <span className="w-1.5 h-1.5 bg-stone-400 rounded-full animate-bounce"></span>
-                    </span>
-                </div>
-            </div>
-        )}
-        
-        {error && (
-            <div className="flex justify-center">
-                <div className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm flex items-center gap-2 border border-red-100">
-                    <AlertCircle className="h-4 w-4" />
-                    {error}
-                </div>
-            </div>
-        )}
-        
-        <div ref={messagesEndRef} />
+      {/* --- MESSAGES (Scrollable) --- */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-6">
+          {messages.length === 0 ? (
+              <div className="h-[60vh] flex flex-col items-center justify-center text-center space-y-4">
+                  <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center">
+                      <Bot className="h-8 w-8 text-stone-400" />
+                  </div>
+                  <div>
+                      <h2 className="text-xl font-semibold text-stone-800 mb-2">Ask me anything</h2>
+                      <p className="text-stone-500 text-sm">I'll search through your vault to find answers.</p>
+                  </div>
+              </div>
+          ) : (
+              messages.map((msg) => (
+                  <div key={msg.id} className="w-full">
+                      {msg.role === 'assistant' && (
+                          <div className="flex gap-4 mb-4">
+                              <div className="w-8 h-8 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center shrink-0">
+                                  <Bot className="h-4 w-4 text-stone-600" />
+                              </div>
+                              <div className="flex-1 pt-1">
+                                  <div className="text-stone-800 text-[15px] leading-relaxed whitespace-pre-wrap">
+                                      {msg.content}
+                                  </div>
+                              </div>
+                          </div>
+                      )}
+                      
+                      {msg.role === 'user' && (
+                          <div className="flex gap-4 mb-4">
+                              <div className="w-8 h-8 rounded-full bg-stone-800 flex items-center justify-center shrink-0 text-white text-sm font-medium">
+                                  You
+                              </div>
+                              <div className="flex-1 pt-1">
+                                  <div className="text-stone-800 text-[15px] leading-relaxed whitespace-pre-wrap">
+                                      {msg.content}
+                                  </div>
+                              </div>
+                          </div>
+                      )}
+                  </div>
+              ))
+          )}
+          
+          {isLoading && (
+              <div className="flex gap-4">
+                  <div className="w-8 h-8 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center shrink-0">
+                      <LoaderCircle className="h-4 w-4 text-stone-400 animate-spin" />
+                  </div>
+                  <div className="flex-1 pt-1">
+                      <span className="flex gap-1">
+                          <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                          <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                          <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce"></span>
+                      </span>
+                  </div>
+              </div>
+          )}
+          
+          {error && (
+              <div className="flex justify-center">
+                  <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm flex items-center gap-2 border border-red-100">
+                      <AlertCircle className="h-4 w-4" />
+                      {error}
+                  </div>
+              </div>
+          )}
+          
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
-      {/* --- 3. INPUT (Fixed) --- */}
-      {/* Sits at the bottom of the flex column. No overlap possible. */}
-      <div className="p-4 border-t border-stone-100 bg-white shrink-0">
-        <div className="relative flex items-end gap-2 bg-[#FBFBF9] border border-stone-200 rounded-2xl p-2 shadow-inner">
-            <Textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask a question..."
-                className="min-h-[44px] max-h-[150px] w-full resize-none border-0 shadow-none focus-visible:ring-0 py-2.5 px-2 text-base bg-transparent text-stone-900 placeholder:text-stone-400"
-                rows={1}
-            />
-            <Button 
-                onClick={() => handleSubmit()} 
-                disabled={!input.trim() || isLoading}
-                size="icon"
-                className="mb-0.5 shrink-0 bg-stone-900 hover:bg-stone-800 rounded-xl h-10 w-10 transition-transform active:scale-95 cursor-pointer"
-            >
-                <SendHorizontal className="h-5 w-5 text-white" />
-            </Button>
+      {/* --- INPUT (Fixed) --- */}
+      <div className="border-t border-stone-200 bg-white shrink-0">
+        <div className="max-w-3xl mx-auto px-4 md:px-6 py-4">
+          <div className="relative flex items-end gap-2 bg-white border border-stone-300 rounded-3xl p-2 shadow-sm hover:shadow-md transition-shadow">
+              <Textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask a question..."
+                  className="min-h-[44px] max-h-[150px] w-full resize-none border-0 shadow-none focus-visible:ring-0 py-2.5 px-3 text-[15px] bg-transparent text-stone-900 placeholder:text-stone-400"
+                  rows={1}
+              />
+              <Button 
+                  onClick={() => handleSubmit()} 
+                  disabled={!input.trim() || isLoading}
+                  size="icon"
+                  className="mb-0.5 shrink-0 bg-stone-900 hover:bg-stone-800 disabled:bg-stone-200 rounded-full h-9 w-9 transition-all active:scale-95"
+              >
+                  <SendHorizontal className="h-4 w-4 text-white" />
+              </Button>
+          </div>
+          <p className="text-center text-xs text-stone-400 mt-3">AI can make mistakes. Check important info.</p>
         </div>
-        <p className="text-center text-[10px] text-stone-400 mt-2">AI can make mistakes. Check important info.</p>
       </div>
     </div>
   )
