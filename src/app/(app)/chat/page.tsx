@@ -5,25 +5,23 @@ import { MessageSquarePlus, SearchX } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { ChatListItem } from './_components/chat-list-item'
 
-// 1. Accept searchParams prop
-export default async function ChatDashboard({
-  searchParams,
-}: {
-  searchParams?: { q?: string }
+export default async function ChatDashboard(props: {
+  searchParams?: Promise<{ q?: string }>
 }) {
+  const searchParams = await props.searchParams;
   const query = searchParams?.q || ''
+  
   const cookieStore = cookies()
   const supabase = createServer(cookieStore)
   
-  // 2. Build Query
+  // 1. Base Query
   let dbQuery = supabase
     .from('chats')
     .select('*')
-    // Sort by PINNED first (descending: true > false), then by DATE
-    .order('is_pinned', { ascending: false })
-    .order('updated_at', { ascending: false })
+    .order('is_pinned', { ascending: false }) // Pinned first
+    .order('updated_at', { ascending: false }) // Then newest
 
-  // 3. Apply Search Filter if query exists
+  // 2. SEARCH LOGIC: Simple Title Match
   if (query) {
     dbQuery = dbQuery.ilike('title', `%${query}%`)
   }
@@ -68,13 +66,12 @@ export default async function ChatDashboard({
                 <ChatListItem key={chat.id} chat={chat} />
             ))
         ) : (
-            // Empty State
             <div className="col-span-full flex flex-col items-center justify-center py-32 border-2 border-dashed border-stone-200 rounded-2xl bg-stone-50/50">
                 <div className="bg-white p-4 rounded-full shadow-sm mb-4">
                     {query ? <SearchX className="h-10 w-10 text-stone-300" /> : <MessageSquarePlus className="h-10 w-10 text-stone-300" />}
                 </div>
                 <h3 className="text-xl font-semibold text-stone-900">
-                    {query ? `No results for "${query}"` : "No conversations yet"}
+                    {query ? `No chats found for "${query}"` : "No conversations yet"}
                 </h3>
                 {!query && <p className="text-stone-500 mt-2">Start a new chat to explore your vault using AI.</p>}
             </div>
