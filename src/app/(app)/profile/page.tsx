@@ -2,19 +2,19 @@ import { createServer } from '@/lib/supabase/server'
 import { UpdatePasswordForm } from './_components/update-password-form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { cookies } from 'next/headers' // --- ADD THIS IMPORT ---
+import { cookies } from 'next/headers'
 
 export default async function ProfilePage() {
-  const cookieStore = cookies() // --- ADD THIS LINE ---
-  const supabase = createServer(cookieStore) // --- PASS cookieStore HERE & REMOVE AWAIT ---
+  const cookieStore = cookies()
+  const supabase = createServer(cookieStore)
   const { data: { user } } = await supabase.auth.getUser()
 
-  
   const isOAuthUser = user?.app_metadata.provider === 'google' || user?.app_metadata.provider === 'github'
 
   return (
     <div className="py-6">
-      <h1 className="text-3xl font-bold mb-6">Profile Settings</h1>
+      {/* Removed the <h1> here because the Header now shows "Profile Settings" */}
+      
       <div className="grid gap-8 md:grid-cols-2 max-w-4xl">
         
         {/* User Information Card */}

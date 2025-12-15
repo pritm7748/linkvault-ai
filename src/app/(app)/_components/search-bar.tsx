@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/dialog"
 import { QandADialog } from './q-and-a-dialog'
 import { ItemDetailsDialog } from '../vault/_components/item-details-dialog'
-// Import actions
 import { getChatTitle, renameChat, deleteChat } from '../chat/actions'
 
 type Source = { id: number; processed_title: string; content_type: string; };
@@ -26,16 +25,15 @@ export function SearchBar() {
   const pathname = usePathname()
   const params = useParams()
   
-  // --- Search State ---
   const [query, setQuery] = useState(searchParams.get('q') || '')
   
-  // --- Chat Header State ---
+  // Chat Header State
   const chatId = params?.id ? Number(params.id) : null
   const [chatTitle, setChatTitle] = useState("")
   const [isRenameOpen, setIsRenameOpen] = useState(false)
   const [newTitleInput, setNewTitleInput] = useState("")
 
-  // --- Q&A / Details State ---
+  // Q&A / Details State
   const [isQnOpen, setIsQnOpen] = useState(false)
   const [answer, setAnswer] = useState<string | null>(null)
   const [isLoadingAnswer, setIsLoadingAnswer] = useState(false)
@@ -43,7 +41,6 @@ export function SearchBar() {
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
 
-  // 1. Fetch Title if inside a Chat
   useEffect(() => {
     if (chatId) {
       getChatTitle(chatId).then(title => {
@@ -53,15 +50,13 @@ export function SearchBar() {
     }
   }, [chatId])
 
-  // Sync Search Query
   useEffect(() => {
     setQuery(searchParams.get('q') || '')
   }, [searchParams])
 
-  // --- Handlers ---
   const handleRename = async () => {
     if (!chatId || !newTitleInput.trim()) return;
-    setChatTitle(newTitleInput); // Optimistic update
+    setChatTitle(newTitleInput); 
     setIsRenameOpen(false);
     await renameChat(chatId, newTitleInput);
     router.refresh();
@@ -96,7 +91,7 @@ export function SearchBar() {
     }
   }
 
-  const handleAskAI = async () => { /* ... existing logic ... */ 
+  const handleAskAI = async () => { 
     if (!query) return;
     setIsQnOpen(true); setIsLoadingAnswer(true); setAnswer(null); setSources([]);
     try {
@@ -107,9 +102,18 @@ export function SearchBar() {
     } catch (e: any) { setAnswer(e.message); } finally { setIsLoadingAnswer(false); }
   };
 
-  // --- RENDER ---
+  // --- RENDER LOGIC ---
 
-  // MODE A: CHAT HEADER (If inside a specific chat)
+  // 1. PROFILE PAGE HEADER
+  if (pathname === '/profile') {
+    return (
+      <div className="w-full flex items-center h-10 animate-in fade-in duration-200">
+        <h2 className="font-serif font-bold text-2xl text-stone-900">Profile Settings</h2>
+      </div>
+    )
+  }
+
+  // 2. CHAT HEADER (Inside a specific chat)
   if (chatId) {
     return (
       <>
@@ -138,7 +142,6 @@ export function SearchBar() {
           </DropdownMenu>
         </div>
 
-        {/* Rename Dialog */}
         <Dialog open={isRenameOpen} onOpenChange={setIsRenameOpen}>
             <DialogContent>
                 <DialogHeader><DialogTitle>Rename Chat</DialogTitle></DialogHeader>
@@ -155,7 +158,7 @@ export function SearchBar() {
     )
   }
 
-  // MODE B: STANDARD SEARCH BAR
+  // 3. STANDARD SEARCH BAR (Default)
   return (
     <>
       <div className="w-full flex items-center gap-2">
