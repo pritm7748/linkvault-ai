@@ -80,10 +80,12 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
   }
 
   return (
-    // FIX: Just use h-full. The Layout now gives us the exact space we need.
-    <div className="flex flex-col h-full w-full bg-white relative">
+    // MAIN CONTAINER:
+    // 1. -m-4 md:-m-8: Cancels parent padding to go full-width.
+    // 2. h-[calc(100vh-3.5rem)]: Fits exact screen height (minus header).
+    <div className="flex flex-col -m-4 md:-m-8 h-[calc(100vh-3.5rem)] bg-white relative overflow-hidden">
       
-      {/* HEADER */}
+      {/* --- BACK BUTTON (Floating) --- */}
       <div className="absolute top-4 left-4 z-20">
         <Button 
             variant="ghost" 
@@ -96,13 +98,14 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
         </Button>
       </div>
 
-      {/* MESSAGES */}
+      {/* --- MESSAGES LIST (Scrolls) --- */}
       <div className="flex-1 overflow-y-auto w-full scroll-smooth">
-        <div className="max-w-3xl mx-auto px-4 py-8 pb-40 min-h-full flex flex-col justify-end">
+        {/* FIX: Removed 'pb-40'. Changed to 'pb-4'. Messages now sit right above the input. */}
+        <div className="max-w-3xl mx-auto px-4 py-8 pb-4 min-h-full flex flex-col justify-end">
             {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center text-center space-y-6 opacity-50 py-20">
-                    <div className="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center">
-                        <Bot className="h-6 w-6 text-stone-400" />
+                    <div className="w-16 h-16 bg-stone-50 rounded-full flex items-center justify-center">
+                        <Bot className="h-8 w-8 text-stone-400" />
                     </div>
                     <p className="text-stone-500 font-medium text-lg">How can I help you with your vault?</p>
                 </div>
@@ -153,12 +156,13 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
                 </div>
             )}
             
-            <div ref={messagesEndRef} className="h-4" />
+            <div ref={messagesEndRef} className="h-1" />
         </div>
       </div>
 
-      {/* INPUT */}
-      <div className="w-full bg-white p-4 z-10">
+      {/* --- INPUT FOOTER (Fixed at Bottom of Flex Column) --- */}
+      {/* FIX: Reduced padding to 'p-3' to remove extra space below. */}
+      <div className="w-full bg-white p-3 z-10 border-t border-transparent">
         <div className="max-w-3xl mx-auto w-full">
             <div className="relative flex items-end gap-2 bg-stone-50 border border-transparent focus-within:border-stone-200 focus-within:bg-white rounded-[28px] p-2 pl-5 transition-all">
                 <Textarea
@@ -179,7 +183,7 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
                     <SendHorizontal className="h-5 w-5 text-white" />
                 </Button>
             </div>
-            <p className="text-center text-[11px] text-stone-400 mt-3 font-medium">Gemini can make mistakes. Check important info.</p>
+            <p className="text-center text-[11px] text-stone-400 mt-2 font-medium">Gemini can make mistakes. Check important info.</p>
         </div>
       </div>
     </div>
