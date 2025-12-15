@@ -17,47 +17,56 @@ type Source = {
 export function SearchBar() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const pathname = usePathname() // --- ADDED: To check current page ---
+  const pathname = usePathname()
   
   const [query, setQuery] = useState(searchParams.get('q') || '')
 
-  // --- State for Q&A Dialog ---
   const [isQnOpen, setIsQnOpen] = useState(false)
   const [answer, setAnswer] = useState<string | null>(null)
   const [isLoadingAnswer, setIsLoadingAnswer] = useState(false)
   const [sources, setSources] = useState<Source[]>([])
   
-  // --- State for the main ItemDetailsDialog ---
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  // Sync local state with URL params when they change
+  // Sync state with URL
   useEffect(() => {
     setQuery(searchParams.get('q') || '')
   }, [searchParams])
 
-  // --- LOGIC 1: Hide Search on specific chat pages (/chat/123) ---
-  // If path starts with /chat/ and has an ID after it
+  // Hide Search on specific chat pages
   if (pathname.match(/^\/chat\/\d+/)) {
-    return <div className="w-full flex-1" /> // Return empty spacer to maintain layout
+    return <div className="w-full flex-1" />
   }
 
-  // Determine context
   const isChatDashboard = pathname === '/chat'
 
+  // --- FIX: Handle Instant Clearing ---
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value
+    setQuery(newValue)
+
+    // If the input is cleared (user clicked X or deleted text), reset page immediately
+    if (newValue === '') {
+        if (isChatDashboard) {
+            router.replace('/chat')
+        } else {
+            router.push('/vault')
+        }
+    }
+  }
+
   const executeSearch = () => {
-    // Allow clearing search by searching empty string
     if (!query.trim()) {
+        // Handle empty search on Enter press too
         if (isChatDashboard) router.replace('/chat');
         else router.push('/vault');
         return;
     }
 
     if (isChatDashboard) {
-        // On Chat Dashboard: Update URL to filter the list
         router.replace(`/chat?q=${encodeURIComponent(query)}`);
     } else {
-        // On Vault/Other: Redirect to Vault with search query
         router.push(`/vault?q=${encodeURIComponent(query)}`);
     }
   };
@@ -113,11 +122,10 @@ export function SearchBar() {
           <Input
             type="search"
             name="query"
-            // --- LOGIC 2: Dynamic Placeholder ---
             placeholder={isChatDashboard ? "Search conversation titles..." : "Search..."}
             className="w-full bg-background pl-9 shadow-none h-10 text-base md:text-sm"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={handleSearchChange} // Uses the new handler
             onKeyDown={handleKeyDown}
           />
         </div>
@@ -132,7 +140,6 @@ export function SearchBar() {
             <span className="hidden md:inline">Search</span>
         </Button>
 
-        {/* --- LOGIC 3: Hide "Ask AI" on Chat Dashboard --- */}
         {!isChatDashboard && (
             <Button 
                 onClick={handleAskAI} 
