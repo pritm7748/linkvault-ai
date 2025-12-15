@@ -82,101 +82,96 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
   }
 
   return (
-    <div className="flex flex-col h-screen w-full bg-white">
-      
-      {/* --- MESSAGES (Scrollable area) --- */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-4 md:px-6">
-          
-          {/* Back button */}
-          <div className="py-4">
-            <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => router.push('/chat')}
-                className="text-stone-500 hover:text-stone-900 hover:bg-stone-100"
-            >
-                <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </div>
+    <>
+      {/* Back button - Fixed at top left */}
+      <div className="fixed top-4 left-4 z-50 bg-white">
+        <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => router.push('/chat')}
+            className="text-stone-500 hover:text-stone-900 hover:bg-stone-100"
+        >
+            <ArrowLeft className="h-5 w-5" />
+        </Button>
+      </div>
 
-          {/* Messages */}
-          <div className="pb-6">
-            {messages.length === 0 ? (
-                <div className="h-[60vh] flex flex-col items-center justify-center text-center space-y-4">
-                    <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center">
-                        <Bot className="h-8 w-8 text-stone-400" />
+      {/* Messages - Uses browser scroll */}
+      <div className="w-full min-h-screen bg-white pt-16 pb-32">
+        <div className="max-w-3xl mx-auto px-4 md:px-6">
+          {messages.length === 0 ? (
+              <div className="h-[70vh] flex flex-col items-center justify-center text-center space-y-4">
+                  <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center">
+                      <Bot className="h-8 w-8 text-stone-400" />
+                  </div>
+                  <div>
+                      <h2 className="text-xl font-semibold text-stone-800 mb-2">Ask me anything</h2>
+                      <p className="text-stone-500 text-sm">I'll search through your vault to find answers.</p>
+                  </div>
+              </div>
+          ) : (
+              <div className="space-y-6">
+                {messages.map((msg) => (
+                    <div key={msg.id} className="w-full">
+                        {msg.role === 'assistant' && (
+                            <div className="flex gap-4">
+                                <div className="w-8 h-8 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center shrink-0">
+                                    <Bot className="h-4 w-4 text-stone-600" />
+                                </div>
+                                <div className="flex-1 pt-1">
+                                    <div className="text-stone-800 text-[15px] leading-relaxed whitespace-pre-wrap">
+                                        {msg.content}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
+                        {msg.role === 'user' && (
+                            <div className="flex gap-4 justify-end">
+                                <div className="flex-1 pt-1 flex justify-end">
+                                    <div className="text-stone-800 text-[15px] leading-relaxed whitespace-pre-wrap max-w-[80%]">
+                                        {msg.content}
+                                    </div>
+                                </div>
+                                <div className="w-8 h-8 rounded-full bg-stone-800 flex items-center justify-center shrink-0 text-white text-xs font-medium">
+                                    You
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    <div>
-                        <h2 className="text-xl font-semibold text-stone-800 mb-2">Ask me anything</h2>
-                        <p className="text-stone-500 text-sm">I'll search through your vault to find answers.</p>
+                ))}
+                
+                {isLoading && (
+                    <div className="flex gap-4">
+                        <div className="w-8 h-8 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center shrink-0">
+                            <LoaderCircle className="h-4 w-4 text-stone-400 animate-spin" />
+                        </div>
+                        <div className="flex-1 pt-1">
+                            <span className="flex gap-1">
+                                <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                                <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                                <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce"></span>
+                            </span>
+                        </div>
                     </div>
-                </div>
-            ) : (
-                <div className="space-y-6">
-                  {messages.map((msg) => (
-                      <div key={msg.id} className="w-full">
-                          {msg.role === 'assistant' && (
-                              <div className="flex gap-4">
-                                  <div className="w-8 h-8 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center shrink-0">
-                                      <Bot className="h-4 w-4 text-stone-600" />
-                                  </div>
-                                  <div className="flex-1 pt-1">
-                                      <div className="text-stone-800 text-[15px] leading-relaxed whitespace-pre-wrap">
-                                          {msg.content}
-                                      </div>
-                                  </div>
-                              </div>
-                          )}
-                          
-                          {msg.role === 'user' && (
-                              <div className="flex gap-4 justify-end">
-                                  <div className="flex-1 pt-1 flex justify-end">
-                                      <div className="text-stone-800 text-[15px] leading-relaxed whitespace-pre-wrap max-w-[80%]">
-                                          {msg.content}
-                                      </div>
-                                  </div>
-                                  <div className="w-8 h-8 rounded-full bg-stone-800 flex items-center justify-center shrink-0 text-white text-xs font-medium">
-                                      You
-                                  </div>
-                              </div>
-                          )}
-                      </div>
-                  ))}
-                  
-                  {isLoading && (
-                      <div className="flex gap-4">
-                          <div className="w-8 h-8 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center shrink-0">
-                              <LoaderCircle className="h-4 w-4 text-stone-400 animate-spin" />
-                          </div>
-                          <div className="flex-1 pt-1">
-                              <span className="flex gap-1">
-                                  <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                                  <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                                  <span className="w-2 h-2 bg-stone-400 rounded-full animate-bounce"></span>
-                              </span>
-                          </div>
-                      </div>
-                  )}
-                  
-                  {error && (
-                      <div className="flex justify-center">
-                          <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm flex items-center gap-2 border border-red-100">
-                              <AlertCircle className="h-4 w-4" />
-                              {error}
-                          </div>
-                      </div>
-                  )}
-                </div>
-            )}
-            
-            <div ref={messagesEndRef} />
-          </div>
+                )}
+                
+                {error && (
+                    <div className="flex justify-center">
+                        <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm flex items-center gap-2 border border-red-100">
+                            <AlertCircle className="h-4 w-4" />
+                            {error}
+                        </div>
+                    </div>
+                )}
+              </div>
+          )}
+          
+          <div ref={messagesEndRef} />
         </div>
       </div>
 
-      {/* --- INPUT (Fixed at bottom) --- */}
-      <div className="border-t border-stone-200 bg-white shrink-0">
+      {/* Input - Fixed at bottom */}
+      <div className="fixed bottom-0 left-0 right-0 border-t border-stone-200 bg-white z-40">
         <div className="max-w-3xl mx-auto px-4 md:px-6 py-3">
           <div className="relative flex items-end gap-2 bg-white border border-stone-300 rounded-2xl px-3 py-1.5 shadow-sm hover:shadow-md transition-shadow">
               <Textarea
@@ -200,6 +195,6 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
           <p className="text-center text-[11px] text-stone-400 mt-2">AI can make mistakes. Check important info.</p>
         </div>
       </div>
-    </div>
+    </>
   )
 }
