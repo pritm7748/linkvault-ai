@@ -80,29 +80,26 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
   }
 
   return (
-    // FIX: Main Container fills the AppMain space completely.
+    // FULL HEIGHT CONTAINER (Parent AppMain handles the height logic now)
     <div className="flex flex-col h-full w-full bg-white relative">
       
-      {/* --- HEADER --- */}
-      {/* FIX: Added 'max-w-3xl mx-auto' to the inner div. 
-          This aligns the Back Button with the chat content, not the screen edge. */}
-      <div className="flex-none w-full bg-white/80 backdrop-blur-md z-20 border-b border-stone-50">
-        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center">
-            <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => router.push('/chat')}
-                className="text-stone-500 hover:text-stone-900 gap-2 pl-0 hover:bg-transparent"
-            >
-                <ArrowLeft className="h-5 w-5" />
-                <span className="font-medium text-base">Back to Chats</span>
-            </Button>
-        </div>
+      {/* --- FIX 1: Floating Back Button (No Section) --- */}
+      <div className="absolute top-3 left-3 z-30">
+        <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => router.push('/chat')}
+            className="rounded-full bg-white/50 backdrop-blur-sm hover:bg-stone-200 text-stone-600 h-10 w-10 border border-stone-200/50 shadow-sm"
+            title="Back to Chats"
+        >
+            <ArrowLeft className="h-6 w-6" />
+        </Button>
       </div>
 
       {/* --- MESSAGES AREA --- */}
       <div className="flex-1 overflow-y-auto w-full scroll-smooth">
-        <div className="max-w-3xl mx-auto px-4 py-6 min-h-full flex flex-col justify-end">
+        {/* pt-16: Added top padding so text doesn't hide behind the floating button */}
+        <div className="max-w-3xl mx-auto px-4 pt-16 pb-2 min-h-full flex flex-col justify-end">
             {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center text-center space-y-6 opacity-50 py-20">
                     <div className="w-16 h-16 bg-stone-50 rounded-full flex items-center justify-center">
@@ -111,7 +108,7 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
                     <p className="text-stone-500 font-medium text-lg">How can I help you with your vault?</p>
                 </div>
             ) : (
-                <div className="space-y-8 pb-2">
+                <div className="space-y-8">
                     {messages.map((msg) => (
                         <div key={msg.id} className={cn("flex gap-4 w-full", msg.role === 'user' ? "justify-end" : "justify-start")}>
                             {msg.role === 'assistant' && (
@@ -161,10 +158,10 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
         </div>
       </div>
 
-      {/* --- FOOTER (Input) --- */}
-      <div className="w-full bg-white z-10">
-        {/* FIX: Inner container matches chat width. Padding reduced to 'p-2' to remove gap. */}
-        <div className="max-w-3xl mx-auto w-full p-2">
+      {/* --- FIX 2: Zero Waste Input Footer --- */}
+      {/* p-2 gives just enough breathing room without wasting space. border-t removed for cleaner look. */}
+      <div className="w-full bg-white p-2 z-10">
+        <div className="max-w-3xl mx-auto w-full">
             <div className="relative flex items-end gap-2 bg-stone-50 border border-transparent focus-within:border-stone-200 focus-within:bg-white rounded-[24px] p-2 pl-4 transition-all">
                 <Textarea
                     ref={textareaRef}
@@ -184,7 +181,7 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
                     <SendHorizontal className="h-4 w-4 text-white" />
                 </Button>
             </div>
-            <p className="text-center text-[10px] text-stone-400 mt-1 mb-1 font-medium">AI can make mistakes. Check important info.</p>
+            <p className="text-center text-[10px] text-stone-400 mt-1 mb-0 font-medium">Gemini can make mistakes. Check important info.</p>
         </div>
       </div>
     </div>
