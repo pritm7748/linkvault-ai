@@ -181,7 +181,7 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
                     <SendHorizontal className="h-4 w-4 text-white" />
                 </Button>
             </div>
-            <p className="text-center text-[10px] text-stone-400 mt-1 mb-0 font-medium">Gemini can make mistakes. Check important info.</p>
+            <p className="text-center text-[10px] text-stone-400 mt-1 mb-0 font-medium">AI can make mistakes. Check important info.</p>
         </div>
       </div>
     </div>
