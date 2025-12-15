@@ -80,24 +80,24 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
   }
 
   return (
-    // Container handles max-width and centering relative to the Content Area (not the window)
-    <div className="flex flex-col w-full max-w-3xl mx-auto min-h-full">
+    <div className="flex flex-col w-full max-w-3xl mx-auto min-h-screen bg-white relative">
       
-      {/* --- FIX 1: Back Button (In Flow) --- */}
-      {/* Placed inside the div, so it respects margins and sidebar */}
-      <div className="pt-2 pb-6 sticky top-0 bg-[#FBFBF9]/90 backdrop-blur-sm z-10">
+      {/* --- FIX 1: Minimalist Back Button --- */}
+      {/* 'sticky top-4' keeps it accessible but removes the white bar. 'z-50' keeps it above text. */}
+      <div className="sticky top-4 left-0 z-50 px-4 pointer-events-none">
         <Button 
-            variant="ghost" 
+            variant="outline" 
             size="icon" 
             onClick={() => router.push('/chat')}
-            className="rounded-full hover:bg-stone-200"
+            className="pointer-events-auto h-10 w-10 rounded-full bg-white/80 backdrop-blur-sm shadow-sm border-stone-200 hover:bg-stone-100 text-stone-600"
         >
-            <ArrowLeft className="h-5 w-5 text-stone-600" />
+            <ArrowLeft className="h-5 w-5" />
         </Button>
       </div>
 
       {/* --- MESSAGES AREA --- */}
-      <div className="flex-1 space-y-8 pb-4">
+      {/* 'pb-40' creates space so the last message scrolls ABOVE the input bar, not behind it. */}
+      <div className="flex-1 px-4 space-y-8 pb-40 pt-4">
         {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center space-y-4 opacity-50 py-20">
                 <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center">
@@ -109,7 +109,7 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
             messages.map((msg) => (
                 <div key={msg.id} className={cn("flex gap-4 w-full", msg.role === 'user' ? "justify-end" : "justify-start")}>
                     {msg.role === 'assistant' && (
-                        <div className="w-9 h-9 rounded-full bg-white border border-stone-200 flex items-center justify-center shrink-0 mt-1">
+                        <div className="w-9 h-9 rounded-full bg-stone-50 border border-stone-100 flex items-center justify-center shrink-0 mt-1">
                             <Bot className="h-5 w-5 text-stone-500" />
                         </div>
                     )}
@@ -128,7 +128,7 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
         
         {isLoading && (
             <div className="flex gap-4">
-                <div className="w-9 h-9 rounded-full bg-white border border-stone-200 flex items-center justify-center mt-1">
+                <div className="w-9 h-9 rounded-full bg-stone-50 border border-stone-100 flex items-center justify-center mt-1">
                     <LoaderCircle className="h-5 w-5 text-stone-400 animate-spin" />
                 </div>
                 <div className="bg-white border border-stone-200 rounded-2xl rounded-bl-none px-6 py-5 shadow-sm flex items-center">
@@ -153,29 +153,33 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* --- FIX 2: Sticky Bottom Input --- */}
-      {/* 'sticky bottom-0' ensures it stays visible at the bottom of the scroll container (Main Layout) */}
-      <div className="sticky bottom-0 pb-6 pt-2 bg-gradient-to-t from-[#FBFBF9] via-[#FBFBF9] to-transparent z-20">
-        <div className="relative flex items-end gap-2 bg-white border border-stone-200 rounded-3xl p-1.5 pl-4 shadow-xl shadow-stone-200/50 ring-1 ring-black/5">
-            <Textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask a question..."
-                className="min-h-[48px] max-h-[150px] w-full resize-none border-0 shadow-none focus-visible:ring-0 py-3 px-0 text-base bg-transparent text-stone-900 placeholder:text-stone-400"
-                rows={1}
-            />
-            <Button 
-                onClick={() => handleSubmit()} 
-                disabled={!input.trim() || isLoading}
-                size="icon"
-                className="mb-1 shrink-0 bg-stone-900 hover:bg-stone-800 rounded-full h-10 w-10 transition-transform active:scale-95 cursor-pointer"
-            >
-                <SendHorizontal className="h-5 w-5 text-white" />
-            </Button>
+      {/* --- FIX 2 & 3: Input Area (Centered & Opaque) --- */}
+      {/* 1. fixed bottom-0 left-0 w-full: Anchors it to the screen bottom. */}
+      {/* 2. bg-white: Makes it opaque so text scrolls BEHIND it. */}
+      {/* 3. max-w-3xl mx-auto: Ensures the input box lines up with the chat, even on wide screens. */}
+      <div className="fixed bottom-0 left-0 w-full bg-white border-t border-stone-100 p-4 md:p-6 z-40">
+        <div className="max-w-3xl mx-auto w-full">
+            <div className="relative flex items-end gap-2 bg-[#FBFBF9] border border-stone-200 rounded-3xl p-1.5 pl-4 shadow-xl shadow-stone-200/50 ring-1 ring-black/5">
+                <Textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Ask a question..."
+                    className="min-h-[48px] max-h-[150px] w-full resize-none border-0 shadow-none focus-visible:ring-0 py-3 px-0 text-base bg-transparent text-stone-900 placeholder:text-stone-400"
+                    rows={1}
+                />
+                <Button 
+                    onClick={() => handleSubmit()} 
+                    disabled={!input.trim() || isLoading}
+                    size="icon"
+                    className="mb-1 shrink-0 bg-stone-900 hover:bg-stone-800 rounded-full h-10 w-10 transition-transform active:scale-95 cursor-pointer"
+                >
+                    <SendHorizontal className="h-5 w-5 text-white" />
+                </Button>
+            </div>
+            <p className="text-center text-[10px] text-stone-400 mt-2">AI can make mistakes. Check important info.</p>
         </div>
-        <p className="text-center text-[10px] text-stone-400 mt-2">AI can make mistakes. Check important info.</p>
       </div>
     </div>
   )
