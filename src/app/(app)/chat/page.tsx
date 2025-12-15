@@ -34,7 +34,7 @@ export default async function ChatDashboard() {
   }
 
   return (
-    <div className="flex flex-col gap-8 w-full p-6 md:p-10">
+    <div className="flex flex-col gap-8 w-full p-6 md:p-10 max-w-5xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
             <h1 className="text-3xl md:text-4xl font-serif font-bold text-stone-900">Chat History</h1>
@@ -47,8 +47,8 @@ export default async function ChatDashboard() {
         </form>
       </div>
 
-      {/* FIX: Grid layout to utilize desktop space */}
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {/* FIX: Switched from Grid to Vertical Stack */}
+      <div className="flex flex-col gap-3">
         {chats && chats.length > 0 ? (
             chats.map((chat) => (
                 <ChatListItem key={chat.id} chat={chat} />
