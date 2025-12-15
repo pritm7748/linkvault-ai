@@ -80,13 +80,12 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
   }
 
   return (
-    // FIX 1: STRUCTURE
-    // h-[calc(100vh-60px)] -> Forces component to take exact remaining screen height.
-    // overflow-hidden -> Prevents the "double scroll" (browser scrollbar).
-    // w-full -> Removes the "card" look by spanning edge-to-edge.
-    <div className="flex flex-col w-full h-[calc(100vh-60px)] bg-white overflow-hidden relative">
+    // FIX: Negative margins (-m-4 md:-m-8) UNDO the global layout padding.
+    // 'h-[calc(100vh-3.5rem)]' fits exactly below the 56px (3.5rem) header.
+    // This creates a true full-screen experience.
+    <div className="flex flex-col -m-4 md:-m-8 h-[calc(100vh-3.5rem)] bg-white relative overflow-hidden">
       
-      {/* --- HEADER: Floating Back Button --- */}
+      {/* --- HEADER (Floating Back Button) --- */}
       <div className="absolute top-4 left-4 z-20">
         <Button 
             variant="ghost" 
@@ -100,16 +99,15 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
       </div>
 
       {/* --- SCROLLABLE AREA --- */}
-      {/* flex-1 overflow-y-auto -> This creates the SINGLE internal scrollbar for messages. */}
-      <div className="flex-1 overflow-y-auto w-full">
-        {/* Max-width container keeps text readable, but the parent is full width */}
+      <div className="flex-1 overflow-y-auto w-full scroll-smooth">
+        {/* Centered Content Column */}
         <div className="max-w-3xl mx-auto px-4 py-8 pb-40 min-h-full flex flex-col justify-end">
             {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center text-center space-y-6 opacity-50 py-20">
-                    <div className="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center">
-                        <Bot className="h-6 w-6 text-stone-400" />
+                    <div className="w-16 h-16 bg-stone-50 rounded-full flex items-center justify-center">
+                        <Bot className="h-8 w-8 text-stone-400" />
                     </div>
-                    <p className="text-stone-500 font-medium">How can I help you with your vault?</p>
+                    <p className="text-stone-500 font-medium text-lg">How can I help you with your vault?</p>
                 </div>
             ) : (
                 <div className="space-y-8 pt-10">
@@ -117,7 +115,7 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
                         <div key={msg.id} className={cn("flex gap-4 w-full", msg.role === 'user' ? "justify-end" : "justify-start")}>
                             {msg.role === 'assistant' && (
                                 <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0 mt-1">
-                                    <Bot className="h-4 w-4 text-stone-600" />
+                                    <Bot className="h-4 w-4 text-stone-500" />
                                 </div>
                             )}
                             
@@ -158,13 +156,13 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
                 </div>
             )}
             
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} className="h-4" />
         </div>
       </div>
 
       {/* --- FOOTER: Input Area --- */}
-      {/* bg-white makes it opaque. w-full spans the screen. max-w-3xl centers the box. */}
-      <div className="w-full bg-white p-4 z-10 border-t border-transparent">
+      {/* Background is white to cover scrolling text. */}
+      <div className="w-full bg-white p-4 z-10">
         <div className="max-w-3xl mx-auto w-full">
             <div className="relative flex items-end gap-2 bg-stone-50 border border-transparent focus-within:border-stone-200 focus-within:bg-white rounded-[28px] p-2 pl-5 transition-all">
                 <Textarea
