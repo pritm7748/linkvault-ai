@@ -80,11 +80,13 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
   }
 
   return (
-    // FIX 1: Full width/height container. Removed borders/shadows/rounding.
-    // 'h-[calc(100vh-65px)]' fills the space below the main app header.
-    <div className="flex flex-col w-full h-[calc(100vh-65px)] bg-white relative">
+    // FIX 1: STRUCTURE
+    // h-[calc(100vh-60px)] -> Forces component to take exact remaining screen height.
+    // overflow-hidden -> Prevents the "double scroll" (browser scrollbar).
+    // w-full -> Removes the "card" look by spanning edge-to-edge.
+    <div className="flex flex-col w-full h-[calc(100vh-60px)] bg-white overflow-hidden relative">
       
-      {/* --- HEADER (Minimalist Back Button) --- */}
+      {/* --- HEADER: Floating Back Button --- */}
       <div className="absolute top-4 left-4 z-20">
         <Button 
             variant="ghost" 
@@ -97,24 +99,25 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
         </Button>
       </div>
 
-      {/* --- MESSAGES AREA --- */}
-      <div className="flex-1 overflow-y-auto scroll-smooth">
-        {/* Inner container centers the content */}
-        <div className="max-w-3xl mx-auto px-4 py-8 pb-32 min-h-full flex flex-col justify-end"> {/* justify-end keeps start of chat visually pleasing */}
+      {/* --- SCROLLABLE AREA --- */}
+      {/* flex-1 overflow-y-auto -> This creates the SINGLE internal scrollbar for messages. */}
+      <div className="flex-1 overflow-y-auto w-full">
+        {/* Max-width container keeps text readable, but the parent is full width */}
+        <div className="max-w-3xl mx-auto px-4 py-8 pb-40 min-h-full flex flex-col justify-end">
             {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center text-center space-y-6 opacity-50 py-20">
-                    <div className="w-16 h-16 bg-stone-50 rounded-full flex items-center justify-center">
-                        <Bot className="h-8 w-8 text-stone-400" />
+                    <div className="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center">
+                        <Bot className="h-6 w-6 text-stone-400" />
                     </div>
-                    <p className="text-stone-500 font-medium text-lg">How can I help you with your vault?</p>
+                    <p className="text-stone-500 font-medium">How can I help you with your vault?</p>
                 </div>
             ) : (
-                <div className="space-y-8 pt-10"> {/* Extra top padding for back button clearance */}
+                <div className="space-y-8 pt-10">
                     {messages.map((msg) => (
                         <div key={msg.id} className={cn("flex gap-4 w-full", msg.role === 'user' ? "justify-end" : "justify-start")}>
                             {msg.role === 'assistant' && (
                                 <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0 mt-1">
-                                    <Bot className="h-4 w-4 text-stone-500" />
+                                    <Bot className="h-4 w-4 text-stone-600" />
                                 </div>
                             )}
                             
@@ -122,7 +125,7 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
                                 "max-w-[85%] rounded-2xl px-5 py-3 text-[15px] leading-relaxed break-words whitespace-pre-wrap", 
                                 msg.role === 'user' 
                                     ? "bg-stone-100 text-stone-900 rounded-br-sm" 
-                                    : "bg-transparent text-stone-800 pl-0 pt-0" // Gemini style: AI text has no bubble, just text
+                                    : "bg-transparent text-stone-800 pl-0 pt-0"
                             )}>
                                 {msg.content}
                             </div>
@@ -136,7 +139,7 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
                     <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center mt-1">
                         <LoaderCircle className="h-4 w-4 text-stone-400 animate-spin" />
                     </div>
-                    <div className="px-0 py-2 flex items-center">
+                    <div className="py-2">
                         <span className="flex gap-1">
                             <span className="w-1.5 h-1.5 bg-stone-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
                             <span className="w-1.5 h-1.5 bg-stone-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
@@ -155,13 +158,13 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
                 </div>
             )}
             
-            <div ref={messagesEndRef} className="h-4" />
+            <div ref={messagesEndRef} />
         </div>
       </div>
 
-      {/* --- FOOTER (Input) --- */}
-      {/* Full width white background, but content constrained to max-w-3xl */}
-      <div className="flex-none bg-white p-4 z-20">
+      {/* --- FOOTER: Input Area --- */}
+      {/* bg-white makes it opaque. w-full spans the screen. max-w-3xl centers the box. */}
+      <div className="w-full bg-white p-4 z-10 border-t border-transparent">
         <div className="max-w-3xl mx-auto w-full">
             <div className="relative flex items-end gap-2 bg-stone-50 border border-transparent focus-within:border-stone-200 focus-within:bg-white rounded-[28px] p-2 pl-5 transition-all">
                 <Textarea
