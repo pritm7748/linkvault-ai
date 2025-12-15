@@ -14,7 +14,7 @@ export default async function ChatPage(props: Props) {
   const cookieStore = cookies()
   const supabase = createServer(cookieStore)
 
-  // 1. Fetch Chat Details (Verify ownership)
+  // 1. Fetch Chat Details
   const { data: chat, error } = await supabase
     .from('chats')
     .select('*')
@@ -32,11 +32,14 @@ export default async function ChatPage(props: Props) {
     .eq('chat_id', id)
     .order('created_at', { ascending: true })
 
-  // 3. Render Client Interface
+  // 3. Render Client Interface with Title
   return (
-    <div className="h-[calc(100vh-140px)] md:h-[calc(100vh-100px)] flex flex-col">
-       {/* Passing the chat ID and history to the client component */}
-       <ChatInterface chatId={id} initialMessages={messages || []} />
+    <div className="h-full">
+       <ChatInterface 
+          chatId={id} 
+          initialMessages={messages || []} 
+          initialTitle={chat.title || "New Chat"} // --- PASS TITLE ---
+       />
     </div>
   )
 }

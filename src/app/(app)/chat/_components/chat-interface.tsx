@@ -4,8 +4,26 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { SendHorizontal, Bot, LoaderCircle, AlertCircle, ArrowLeft } from 'lucide-react'
+import { 
+    SendHorizontal, Bot, LoaderCircle, AlertCircle, ArrowLeft, 
+    MoreVertical, Pencil, Trash2 
+} from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+import { renameChat, deleteChat } from '../actions' // Import Server Actions
 
 type Message = {
   id: number;
@@ -16,13 +34,19 @@ type Message = {
 type ChatInterfaceProps = {
   chatId: string;
   initialMessages: Message[];
+  initialTitle: string; // Added Title Prop
 };
 
-export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
+export function ChatInterface({ chatId, initialMessages, initialTitle }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  // --- Header State ---
+  const [title, setTitle] = useState(initialTitle)
+  const [isRenameOpen, setIsRenameOpen] = useState(false)
+  const [newTitleInput, setNewTitleInput] = useState(initialTitle)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -79,27 +103,64 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
     }
   }
 
+  // --- ACTIONS ---
+  const handleRename = async () => {
+    if (!newTitleInput.trim()) return;
+    setTitle(newTitleInput);
+    setIsRenameOpen(false);
+    await renameChat(Number(chatId), newTitleInput);
+    router.refresh();
+  }
+
+  const handleDelete = async () => {
+    if (!confirm("Delete this conversation?")) return;
+    await deleteChat(Number(chatId));
+    router.push('/chat'); // Go back to dashboard
+  }
+
   return (
-    // FULL HEIGHT CONTAINER (Parent AppMain handles the height logic now)
     <div className="flex flex-col h-full w-full bg-white relative">
       
-      {/* --- FIX 1: Floating Back Button (No Section) --- */}
-      <div className="absolute top-3 left-3 z-30">
-        <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => router.push('/chat')}
-            className="rounded-full bg-white/50 backdrop-blur-sm hover:bg-stone-200 text-stone-600 h-10 w-10 border border-stone-200/50 shadow-sm"
-            title="Back to Chats"
-        >
-            <ArrowLeft className="h-6 w-6" />
-        </Button>
+      {/* --- GEMINI-STYLE HEADER --- */}
+      <div className="flex-none flex items-center justify-between px-4 py-2 border-b border-stone-100 bg-white/90 backdrop-blur-sm z-20">
+        
+        {/* Left: Back + Title */}
+        <div className="flex items-center gap-2 overflow-hidden">
+            <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => router.push('/chat')}
+                className="rounded-full hover:bg-stone-100 text-stone-600 h-9 w-9 shrink-0"
+                title="Back to Chats"
+            >
+                <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h2 className="font-semibold text-stone-900 truncate max-w-[200px] md:max-w-md text-sm md:text-base">
+                {title}
+            </h2>
+        </div>
+
+        {/* Right: Menu */}
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-stone-600 hover:bg-stone-100">
+                    <MoreVertical className="h-5 w-5" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => { setNewTitleInput(title); setIsRenameOpen(true); }}>
+                    <Pencil className="mr-2 h-4 w-4" /> Rename
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDelete} className="text-red-600 focus:text-red-700 focus:bg-red-50">
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* --- MESSAGES AREA --- */}
       <div className="flex-1 overflow-y-auto w-full scroll-smooth">
-        {/* pt-16: Added top padding so text doesn't hide behind the floating button */}
-        <div className="max-w-3xl mx-auto px-4 pt-16 pb-2 min-h-full flex flex-col justify-end">
+        <div className="max-w-3xl mx-auto px-4 pt-4 pb-2 min-h-full flex flex-col justify-end">
             {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center text-center space-y-6 opacity-50 py-20">
                     <div className="w-16 h-16 bg-stone-50 rounded-full flex items-center justify-center">
@@ -158,9 +219,8 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
         </div>
       </div>
 
-      {/* --- FIX 2: Zero Waste Input Footer --- */}
-      {/* p-2 gives just enough breathing room without wasting space. border-t removed for cleaner look. */}
-      <div className="w-full bg-white p-2 z-10">
+      {/* --- FOOTER --- */}
+      <div className="w-full bg-white px-3 pb-3 pt-0 z-10">
         <div className="max-w-3xl mx-auto w-full">
             <div className="relative flex items-end gap-2 bg-stone-50 border border-transparent focus-within:border-stone-200 focus-within:bg-white rounded-[24px] p-2 pl-4 transition-all">
                 <Textarea
@@ -181,9 +241,30 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
                     <SendHorizontal className="h-4 w-4 text-white" />
                 </Button>
             </div>
-            <p className="text-center text-[10px] text-stone-400 mt-1 mb-0 font-medium">AI can make mistakes. Check important info.</p>
+            <p className="text-center text-[10px] text-stone-400 mt-2 font-medium">Gemini can make mistakes. Check important info.</p>
         </div>
       </div>
+
+      {/* --- RENAME DIALOG --- */}
+      <Dialog open={isRenameOpen} onOpenChange={setIsRenameOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Rename Chat</DialogTitle>
+            </DialogHeader>
+            <div className="py-2">
+                <Input 
+                    value={newTitleInput}
+                    onChange={(e) => setNewTitleInput(e.target.value)}
+                    placeholder="Enter new title"
+                />
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setIsRenameOpen(false)}>Cancel</Button>
+                <Button onClick={handleRename}>Save</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   )
 }
