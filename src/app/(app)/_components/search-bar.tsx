@@ -21,13 +21,16 @@ export function SearchBar() {
   
   const [query, setQuery] = useState(searchParams.get('q') || '')
   
-  // Chat Header State
-  const chatId = params?.id ? Number(params.id) : null
+  // --- FIX: Strict Check for Chat Context ---
+  // Only treat 'id' as a chatId if we are actually on a /chat/ route.
+  // This prevents Collection IDs (from /collections/[id]) from triggering the chat header.
+  const isChatRoute = pathname.startsWith('/chat/');
+  const chatId = isChatRoute && params?.id ? Number(params.id) : null;
+
   const [chatTitle, setChatTitle] = useState("")
   const [isRenameOpen, setIsRenameOpen] = useState(false)
   const [newTitleInput, setNewTitleInput] = useState("")
 
-  // Q&A / Details State
   const [isQnOpen, setIsQnOpen] = useState(false)
   const [answer, setAnswer] = useState<string | null>(null)
   const [isLoadingAnswer, setIsLoadingAnswer] = useState(false)
@@ -35,11 +38,10 @@ export function SearchBar() {
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
 
-  // Determine Context
+  // Context Flags
   const isChatDashboard = pathname === '/chat'
   const isProfilePage = pathname === '/profile'
-  // FIX: Detect if we are inside a Collection or Favorites
-  const isCollectionContext = pathname.startsWith('/collections/') || pathname === '/vault/favorites';
+  const isCollectionContext = pathname.startsWith('/collections/') || pathname === '/vault/favorites'
 
   useEffect(() => {
     if (chatId) {
@@ -69,22 +71,18 @@ export function SearchBar() {
   }
 
   const executeSearch = () => {
-    // Handle clearing search
     if (!query.trim()) {
         if (isChatDashboard) router.replace('/chat');
-        else if (isCollectionContext) router.replace(pathname); // Stay on collection, clear query
+        else if (isCollectionContext) router.replace(pathname);
         else router.push('/vault');
         return;
     }
 
-    // FIX: Route based on context
     if (isChatDashboard) {
         router.replace(`/chat?q=${encodeURIComponent(query)}`);
     } else if (isCollectionContext) {
-        // Filter IN PLACE for Collections/Favorites
         router.replace(`${pathname}?q=${encodeURIComponent(query)}`);
     } else {
-        // Default to Vault for everything else
         router.push(`/vault?q=${encodeURIComponent(query)}`);
     }
   };
@@ -116,16 +114,20 @@ export function SearchBar() {
 
   // --- RENDER LOGIC ---
 
+  // 1. PROFILE HEADER
   if (isProfilePage) {
     return <div className="w-full flex items-center h-10 animate-in fade-in duration-200"><h2 className="font-serif font-bold text-2xl text-stone-900">Profile Settings</h2></div>
   }
 
+  // 2. CHAT HEADER (Only if actually in a Chat)
   if (chatId) {
     return (
       <>
         <div className="w-full flex items-center justify-between animate-in fade-in duration-200">
           <div className="flex items-center gap-2 overflow-hidden">
-            <Button variant="ghost" size="icon" onClick={() => router.push('/chat')} className="-ml-2 text-stone-500 hover:text-stone-900"><ArrowLeft className="h-5 w-5" /></Button>
+            <Button variant="ghost" size="icon" onClick={() => router.push('/chat')} className="-ml-2 text-stone-500 hover:text-stone-900">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
             <h2 className="font-serif font-bold text-lg text-stone-900 truncate">{chatTitle}</h2>
           </div>
           <DropdownMenu>
@@ -143,6 +145,7 @@ export function SearchBar() {
     )
   }
 
+  // 3. SEARCH BAR (Collections, Favorites, Vault, Chat Dashboard)
   return (
     <>
       <div className="w-full flex items-center gap-2">
