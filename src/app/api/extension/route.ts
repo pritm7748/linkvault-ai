@@ -96,7 +96,7 @@ export async function POST(req: Request) {
     // --- 3. CALL GEMINI (With Retry) ---
     // If 2.5-flash keeps failing, switch string to "gemini-1.5-flash"
     const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.0-flash", 
+        model: "gemini-2.5-flash", 
         generationConfig: { responseMimeType: "application/json", responseSchema: jsonSchema }
     });
     
