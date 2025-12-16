@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
 
     // --- FIX: USE NEW FALLBACK UTILITY ---
     const result: any = await generateContentWithFallback(
-        "gemini-2.0-flash", // Primary model
+        "gemini-2.5-flash", // Primary model
         { responseMimeType: "application/json", responseSchema: jsonSchema },
         contentForAI
     );
