@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { LoaderCircle, ExternalLink, Edit, Save, Download } from 'lucide-react'
 
-// --- UPDATED THIS TYPE ---
 type VaultItemFull = {
   id: number;
   created_at: string;
@@ -19,7 +18,7 @@ type VaultItemFull = {
   processed_summary: string | null;
   processed_tags: string[] | null;
   storage_path: string | null;
-  is_favorited: boolean; // Add the new field
+  is_favorited: boolean;
 };
 
 type ItemDetailsDialogProps = {
@@ -34,9 +33,15 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
   const [isLoading, setIsLoading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  // Form State
   const [title, setTitle] = useState('')
   const [summary, setSummary] = useState('')
   const [tags, setTags] = useState('')
+  
+  // Image Display State
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  
   const supabase = createClient()
 
   useEffect(() => {
@@ -44,20 +49,35 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
       const fetchItemDetails = async () => {
         setIsLoading(true)
         setError(null)
+        setImageUrl(null) // Reset image
+
         try {
           const response = await fetch(`/api/vault/${itemId}`)
           if (!response.ok) throw new Error('Failed to fetch item details.')
           const data: VaultItemFull = await response.json()
+          
           setItem(data)
           setTitle(data.processed_title || '')
           setSummary(data.processed_summary || '')
           setTags((data.processed_tags || []).join(', '))
-        } catch (err: unknown) {
-          if (err instanceof Error) {
-            setError(err.message)
-          } else {
-            setError('An unexpected error occurred.')
+
+          // --- LOGIC: Resolve Image URL ---
+          if (data.content_type === 'image') {
+            if (data.storage_path) {
+                // Internal Storage: Get Signed URL
+                const { data: signedData } = await supabase.storage
+                    .from('vault.images')
+                    .createSignedUrl(data.storage_path, 3600)
+                setImageUrl(signedData?.signedUrl || null)
+            } else if (data.original_content) {
+                // Extension Storage: Use direct URL
+                setImageUrl(data.original_content)
+            }
           }
+
+        } catch (err: unknown) {
+          if (err instanceof Error) setError(err.message)
+          else setError('An unexpected error occurred.')
         } finally {
           setIsLoading(false)
         }
@@ -87,30 +107,34 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
       onUpdate(updatedItem)
       setIsEditing(false)
     } catch (err: unknown) {
-        if (err instanceof Error) {
-            setError(err.message)
-        } else {
-            setError('An unexpected error occurred.')
-        }
+        if (err instanceof Error) setError(err.message)
+        else setError('An unexpected error occurred.')
     } finally {
         setIsLoading(false)
     }
   }
 
   const handleDownload = async () => {
-    if (!item || !item.storage_path) return;
-    try {
-      const { data, error } = await supabase.storage
-        .from('vault.images')
-        .createSignedUrl(item.storage_path, 60)
+    if (!item) return;
+    
+    // Option A: Internal Storage
+    if (item.storage_path) {
+        try {
+            const { data, error } = await supabase.storage
+                .from('vault.images')
+                .createSignedUrl(item.storage_path, 60)
+            if (error) throw error
+            window.open(data.signedUrl, '_blank');
+        } catch (error) {
+            console.error('Error downloading file:', error)
+            setError('Could not create download link.')
+        }
+        return;
+    }
 
-      if (error) {
-        throw error
-      }
-      window.open(data.signedUrl, '_blank');
-    } catch (error) {
-      console.error('Error downloading file:', error)
-      setError('Could not create download link.')
+    // Option B: External URL (Extension)
+    if (item.original_content) {
+        window.open(item.original_content, '_blank');
     }
   }
 
@@ -133,6 +157,15 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
         {item && !isLoading && (
           <>
             <div className="space-y-6 py-4">
+              
+              {/* --- IMAGE PREVIEW SECTION --- */}
+              {item.content_type === 'image' && imageUrl && (
+                <div className="rounded-lg overflow-hidden border border-slate-200 bg-slate-50 flex justify-center">
+                    {/* max-w-full prevents horizontal scroll */}
+                    <img src={imageUrl} alt="Saved" className="max-w-full max-h-[500px] object-contain" />
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label className="font-semibold text-base">Summary</Label>
                 {isEditing ? (
@@ -141,6 +174,7 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
                   <p className="text-sm text-slate-700 leading-relaxed">{item.processed_summary}</p>
                 )}
               </div>
+              
               <div className="space-y-2">
                 <Label className="font-semibold text-base">Tags</Label>
                 {isEditing ? (
@@ -153,9 +187,10 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
                   </div>
                 )}
               </div>
+
               <div className="space-y-2">
-                <Label className="font-semibold text-base">Original Content</Label>
-                <p className="text-sm text-slate-500 break-words">{item.original_content}</p>
+                <Label className="font-semibold text-base">Original Source</Label>
+                <p className="text-xs text-slate-400 break-all line-clamp-1">{item.original_content}</p>
                 
                 {(item.content_type === 'link' || item.content_type === 'video') && (
                   <a href={item.original_content || '#'} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm inline-flex items-center gap-1 mt-1">
@@ -163,14 +198,16 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
                   </a>
                 )}
 
-                {item.content_type === 'image' && item.storage_path && (
+                {/* Show Download for ALL images now */}
+                {item.content_type === 'image' && (
                   <Button variant="outline" size="sm" onClick={handleDownload} className="mt-2">
                     <Download className="mr-2 h-4 w-4" />
-                    Download Image
+                    {item.storage_path ? "Download Image" : "Open Original Image"}
                   </Button>
                 )}
               </div>
             </div>
+            
             <DialogFooter className="pt-4 border-t">
               {isEditing ? (
                 <Button onClick={handleSaveChanges} disabled={isLoading}>

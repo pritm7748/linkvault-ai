@@ -117,3 +117,23 @@ h1 {
 }
 .status-success { color: #15803d; }
 .status-error { color: #b91c1c; }
+
+.highlight-box {
+  background-color: #fffbeb; /* Amber-50 */
+  border: 1px solid #fcd34d; /* Amber-300 */
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 12px;
+}
+
+.highlight-text {
+  font-style: italic;
+  color: #78350f; /* Amber-900 */
+  font-size: 13px;
+  border-left: 3px solid #d97706; /* Amber-600 */
+  padding-left: 8px;
+  margin: 0;
+  max-height: 100px;
+  overflow-y: auto;
+  line-height: 1.4;
+}

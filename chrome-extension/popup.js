@@ -1,6 +1,5 @@
 // chrome-extension/popup.js
 
-// CONFIG
 const API_URL = "https://linkvault-ai.vercel.app/api/extension";
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -8,69 +7,94 @@ document.addEventListener('DOMContentLoaded', async () => {
   const imagesContainer = document.getElementById('images-container');
   const pageInfoDiv = document.getElementById('page-info');
   const saveTabBtn = document.getElementById('save-tab-btn');
+  
+  // New Elements
+  const highlightSection = document.getElementById('highlight-section');
+  const pageSection = document.getElementById('page-section');
+  const highlightContent = document.getElementById('highlight-content');
+  const saveHighlightBtn = document.getElementById('save-highlight-btn');
 
-  // 1. Get Active Tab
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   pageInfoDiv.textContent = tab.title;
 
-  // 2. INJECT SCRIPT TO GET CONTENT & IMAGES
   try {
     const [{ result }] = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       func: () => {
-        // --- THIS RUNS INSIDE THE WEBPAGE ---
+        // 1. Get Selected Text
+        const selection = window.getSelection().toString().trim();
         
-        // A. Get Page Text
+        // 2. Get Page Text
         const text = document.body.innerText.substring(0, 8000);
         
-        // B. Get Images (Filter out tiny icons)
+        // 3. Get Images
         const images = Array.from(document.images)
           .filter(img => img.width > 100 && img.height > 100 && img.src.startsWith('http'))
           .map(img => img.src)
-          .slice(0, 9); // Limit to top 9 to keep popup clean
+          .slice(0, 9);
 
-        // Return unique images only
         return {
           title: document.title,
           text: text,
+          selection: selection,
           images: [...new Set(images)] 
         };
       }
     });
 
-    // 3. RENDER IMAGES IN POPUP
+    // --- LOGIC: SHOW HIGHLIGHT UI IF TEXT SELECTED ---
+    if (result.selection && result.selection.length > 0) {
+        highlightSection.style.display = 'block';
+        pageSection.style.display = 'none'; // Hide standard page save
+        highlightContent.textContent = result.selection;
+        
+        saveHighlightBtn.onclick = () => saveHighlight(tab, result.selection);
+    }
+
+    // Render Images
     if (result.images.length > 0) {
-      imagesContainer.innerHTML = ''; // Clear "Scanning..." text
-      
+      imagesContainer.innerHTML = '';
       result.images.forEach(imgSrc => {
         const imgEl = document.createElement('img');
         imgEl.src = imgSrc;
         imgEl.className = 'img-thumbnail';
-        imgEl.title = "Click to Save to Vault";
-        
-        // Handle Image Click
+        imgEl.title = "Click to Save Image";
         imgEl.onclick = () => saveImage(imgSrc, tab.url);
-        
         imagesContainer.appendChild(imgEl);
       });
     } else {
       imagesContainer.innerHTML = '<div style="grid-column: span 3; text-align: center; color: #a8a29e; font-size: 12px;">No large images found.</div>';
     }
 
-    // 4. HANDLE "SAVE PAGE" CLICK
+    // Handle Standard Page Save
     saveTabBtn.onclick = () => savePage(tab, result.text);
 
   } catch (err) {
     console.error(err);
-    statusDiv.textContent = "Could not access page content.";
+    statusDiv.textContent = "Error accessing page content.";
     statusDiv.className = "status-error";
   }
 
-  // --- HELPER: Save Page ---
-  async function savePage(tab, pageText) {
-    updateStatus("Analyzing & Saving...", "neutral");
-    saveTabBtn.disabled = true;
+  // --- ACTIONS ---
 
+  async function saveHighlight(tab, selection) {
+    updateStatus("Saving Highlight...", "neutral");
+    saveHighlightBtn.disabled = true;
+
+    await sendToApi({
+      type: "note", // We use 'note' so it displays nicely
+      content: selection,
+      sourceUrl: tab.url,
+      title: "Highlight: " + tab.title,
+      pageText: selection // Context for AI Summary
+    });
+    
+    saveHighlightBtn.disabled = false;
+  }
+
+  async function savePage(tab, pageText) {
+    updateStatus("Analyzing Page...", "neutral");
+    saveTabBtn.disabled = true;
     await sendToApi({
       type: "link",
       content: tab.url,
@@ -78,24 +102,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       title: tab.title,
       pageText: pageText
     });
-    
     saveTabBtn.disabled = false;
   }
 
-  // --- HELPER: Save Image ---
   async function saveImage(imgUrl, pageUrl) {
     updateStatus("Saving Image...", "neutral");
-    
     await sendToApi({
       type: "image",
-      content: imgUrl, // The Image URL
+      content: imgUrl,
       sourceUrl: pageUrl,
       title: "Image from " + (new URL(pageUrl).hostname),
-      pageText: "" // No text needed for image
+      pageText: ""
     });
   }
 
-  // --- HELPER: API Call ---
   async function sendToApi(payload) {
     try {
       const response = await fetch(API_URL, {
@@ -106,11 +126,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       if (response.ok) {
-        updateStatus("Saved to Vault!", "success");
+        updateStatus("Saved!", "success");
         setTimeout(() => window.close(), 1500);
       } else {
         const err = await response.json();
-        updateStatus("Error: " + (err.error || "Please Log In"), "error");
+        updateStatus("Error: " + (err.error || "Log in required"), "error");
       }
     } catch (err) {
       updateStatus("Network Error", "error");

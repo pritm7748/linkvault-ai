@@ -5,16 +5,25 @@
   </head>
   <body>
     <div class="container">
-      
       <header>
         <h1>LinkVault AI</h1>
         <span class="badge">BETA</span>
       </header>
 
-      <div class="card">
+      <div id="highlight-section" class="card" style="display: none;">
+        <div class="card-title">Save Highlight</div>
+        <div class="highlight-box">
+          <div id="highlight-content" class="highlight-text"></div>
+        </div>
+        <button id="save-highlight-btn" class="btn-primary">
+          <span>Save Quote & Summarize</span>
+        </button>
+      </div>
+
+      <div id="page-section" class="card">
         <div class="card-title">Current Tab</div>
         <div id="page-info" style="font-size: 13px; margin-bottom: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #444;">
-          Loading page info...
+          Loading...
         </div>
         <button id="save-tab-btn" class="btn-primary">
           <span>Save Page & Summarize</span>
@@ -25,13 +34,12 @@
         <div class="card-title">Save an Image</div>
         <div id="images-container" class="image-grid">
           <div style="grid-column: span 3; text-align: center; color: #a8a29e; font-size: 12px; padding: 10px;">
-            Scanning for images...
+            Scanning...
           </div>
         </div>
       </div>
 
       <div id="status"></div>
-
     </div>
     <script src="popup.js"></script>
   </body>
