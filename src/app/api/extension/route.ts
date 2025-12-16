@@ -1,10 +1,9 @@
 import { createServer } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { GoogleGenerativeAI, SchemaType, Schema } from '@google/generative-ai'
-import { getYouTubeVideoId, getYouTubeVideoDetails, getYouTubeTranscript } from '@/lib/youtube' // IMPORT SHARED UTILS
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+import { SchemaType, Schema } from '@google/generative-ai'
+import { getYouTubeVideoId, getYouTubeVideoDetails, getYouTubeTranscript } from '@/lib/youtube'
+import { generateContentWithFallback, embedContentWithFallback } from '@/lib/gemini' // NEW IMPORT
 
 const jsonSchema = {
   type: SchemaType.OBJECT,
@@ -19,29 +18,20 @@ const jsonSchema = {
   required: ["title", "summary", "tags"]
 } as Schema; 
 
-async function generateWithRetry(model: any, content: any, retries = 3, initialDelay = 2000) {
-  for (let i = 0; i < retries; i++) {
-    try { return await model.generateContent(content); } 
-    catch (error: any) {
-      const isOverloaded = error.message?.includes('503') || error.message?.includes('429');
-      if (i === retries - 1 || !isOverloaded) throw error;
-      await new Promise(resolve => setTimeout(resolve, initialDelay * Math.pow(2, i)));
-    }
-  }
-}
-
 export async function POST(req: Request) {
   const cookieStore = cookies()
   const supabase = createServer(cookieStore)
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized. Please log in to LinkVault.' }, { status: 401 })
+  }
 
   try {
     const body = await req.json()
     const { type, content, title, sourceUrl, pageText } = body
 
     let contentForAI: any[] = [];
-    let processedType = type; // Allow us to upgrade 'link' to 'video'
+    let processedType = type;
     
     let finalPrompt = `
       Analyze the following content. Perform these actions:
@@ -53,9 +43,7 @@ export async function POST(req: Request) {
     `;
 
     if (type === 'link') {
-        // --- NEW: DETECT YOUTUBE ---
         const videoId = getYouTubeVideoId(content);
-        
         if (videoId) {
             processedType = 'video';
             const details = await getYouTubeVideoDetails(videoId);
@@ -67,7 +55,6 @@ export async function POST(req: Request) {
                 
             finalPrompt += `\n\nYouTube Video: "${details.title}"\nContent: "${bodyText.substring(0, 15000)}"`;
         } else {
-            // Standard Link
             const textToAnalyze = pageText || `Link URL: ${content} - Title: ${title}`;
             finalPrompt += `\n\nTitle: "${title}"\nURL: "${content}"\nPage Content: "${textToAnalyze.substring(0, 10000)}"`;
         }
@@ -90,22 +77,22 @@ export async function POST(req: Request) {
         }
     }
 
-    const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.5-flash", 
-        generationConfig: { responseMimeType: "application/json", responseSchema: jsonSchema }
-    });
-    
-    const result: any = await generateWithRetry(model, contentForAI);
+    // --- FIX: USE FALLBACK UTILITY ---
+    const result: any = await generateContentWithFallback(
+        "gemini-2.0-flash", 
+        { responseMimeType: "application/json", responseSchema: jsonSchema },
+        contentForAI
+    );
     const aiJson = JSON.parse(result.response.text());
 
+    // --- FIX: USE EMBEDDING UTILITY ---
     const textForEmbedding = `Title: ${aiJson.title}\nSummary: ${aiJson.summary}`;
-    const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
-    const embeddingResult = await embeddingModel.embedContent(textForEmbedding);
+    const embeddingResult = await embedContentWithFallback(textForEmbedding);
     const embedding = embeddingResult.embedding.values;
 
     const insertData = {
       user_id: user.id,
-      content_type: processedType, // Uses 'video' if detected
+      content_type: processedType,
       original_content: content,
       original_url: sourceUrl || content,
       processed_title: aiJson.title,

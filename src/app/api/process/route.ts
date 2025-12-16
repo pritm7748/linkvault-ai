@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServer } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
-import { GoogleGenerativeAI, SchemaType, Schema } from '@google/generative-ai'
+import { SchemaType, Schema } from '@google/generative-ai'
 import * as cheerio from 'cheerio';
-import { getYouTubeVideoId, getYouTubeVideoDetails, getYouTubeTranscript } from '@/lib/youtube' // IMPORT SHARED UTILS
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+import { getYouTubeVideoId, getYouTubeVideoDetails, getYouTubeTranscript } from '@/lib/youtube'
+import { generateContentWithFallback, embedContentWithFallback } from '@/lib/gemini' // NEW IMPORT
 
 const jsonSchema = {
   type: SchemaType.OBJECT,
@@ -74,31 +73,33 @@ export async function POST(req: NextRequest) {
             const youtubeVideoId = getYouTubeVideoId(content);
             if (!youtubeVideoId) throw new Error("Invalid YouTube URL.");
             
-            // --- NEW: FETCH TRANSCRIPT & DETAILS ---
             const details = await getYouTubeVideoDetails(youtubeVideoId);
             const transcript = await getYouTubeTranscript(youtubeVideoId);
             
             title = details.title;
             description = details.description;
             
-            // If transcript exists, prioritize it. Otherwise use description.
             bodyText = transcript.length > 0 
                 ? `TRANSCRIPT:\n${transcript}` 
                 : `DESCRIPTION:\n${description}`;
         }
         
-        finalPrompt += `Title: "${title}". Body Text: "${bodyText.substring(0, 15000)}"`; // Increased limit for transcripts
+        finalPrompt += `Title: "${title}". Body Text: "${bodyText.substring(0, 15000)}"`; 
         contentForAI = [{ text: finalPrompt }];
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash", generationConfig: { responseMimeType: "application/json", responseSchema: jsonSchema }});
-    const result = await model.generateContent(contentForAI);
+    // --- FIX: USE NEW FALLBACK UTILITY ---
+    const result: any = await generateContentWithFallback(
+        "gemini-2.0-flash", // Primary model
+        { responseMimeType: "application/json", responseSchema: jsonSchema },
+        contentForAI
+    );
+    
     const aiJson = JSON.parse(result.response.text());
     
-    // Embed the AI-enriched summary
+    // --- FIX: USE NEW EMBEDDING UTILITY ---
     const textForEmbedding = `Title: ${aiJson.title}\nSummary: ${aiJson.summary}`;
-    const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
-    const embeddingResult = await embeddingModel.embedContent(textForEmbedding);
+    const embeddingResult = await embedContentWithFallback(textForEmbedding);
     const embedding = embeddingResult.embedding.values;
 
     const { data: newItem, error: dbError } = await supabase.from('vault_items').insert({ user_id: user.id, content_type: contentType, original_content: originalContent, storage_path: storagePath, processed_title: aiJson.title, processed_summary: aiJson.summary, processed_tags: aiJson.tags, embedding: embedding }).select().single();
