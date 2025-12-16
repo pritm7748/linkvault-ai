@@ -1,52 +1,24 @@
-// src/app/api/process/route.ts
-
 import { NextRequest, NextResponse } from 'next/server'
 import { createServer } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
-import { GoogleGenerativeAI, Part, Schema, SchemaType } from '@google/generative-ai'
+import { GoogleGenerativeAI, SchemaType, Schema } from '@google/generative-ai'
 import * as cheerio from 'cheerio';
+import { getYouTubeVideoId, getYouTubeVideoDetails, getYouTubeTranscript } from '@/lib/youtube' // IMPORT SHARED UTILS
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-const jsonSchema: Schema = {
+const jsonSchema = {
   type: SchemaType.OBJECT,
   properties: {
-    "title": { "type": SchemaType.STRING },
-    "summary": { "type": SchemaType.STRING },
-    "tags": {
-      "type": SchemaType.ARRAY,
-      "items": { "type": SchemaType.STRING }
+    title: { type: SchemaType.STRING },
+    summary: { type: SchemaType.STRING },
+    tags: {
+      type: SchemaType.ARRAY,
+      items: { type: SchemaType.STRING }
     },
   },
   required: ["title", "summary", "tags"]
-};
-
-// ... (keep getYouTubeVideoId and getYouTubeVideoDetails functions as they are)
-
-async function getYouTubeVideoDetails(videoId: string): Promise<{ title: string; description: string }> {
-  const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
-  if (!YOUTUBE_API_KEY) throw new Error('Missing YOUTUBE_API_KEY.');
-  
-  const url = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${YOUTUBE_API_KEY}&part=snippet`;
-  
-  try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`YouTube API failed: ${response.status}`);
-    const data = await response.json();
-    const snippet = data.items[0]?.snippet;
-    if (!snippet) return { title: 'Video Not Found', description: 'This video may be private or deleted.' };
-    return { title: snippet.title, description: snippet.description };
-  } catch (error) {
-    return { title: 'API Error', description: 'Could not fetch details from YouTube API.' };
-  }
-}
-
-function getYouTubeVideoId(url: string): string | null {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-  const match = url.match(regExp);
-  return (match && match[2].length === 11) ? match[2] : null;
-}
-
+} as Schema;
 
 export async function POST(req: NextRequest) {
   const cookieStore = cookies();
@@ -58,15 +30,14 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const contentType = formData.get('contentType') as string;
     let originalContent: string | null = null;
-    let contentForAI: (string | Part)[];
+    let contentForAI: any[] = [];
     let storagePath: string | null = null;
     
-    // --- NEW, ADVANCED PROMPT ---
     let finalPrompt = `
       Analyze the following content. Perform these actions:
-      1.  Create a concise, descriptive title.
-      2.  Generate a list of 5-10 relevant tags.
-      3.  Write a detailed, paragraph-long summary. In this summary, you MUST naturally incorporate the most important keywords and concepts that you identified for the tags. This is critical for making the content searchable.
+      1. Create a concise, descriptive title.
+      2. Generate a list of 5-10 relevant tags.
+      3. Write a detailed, paragraph-long summary. You MUST incorporate key insights, specific names, or technical terms mentioned in the text to optimize for searchability.
 
       Here is the content:
     `;
@@ -96,20 +67,27 @@ export async function POST(req: NextRequest) {
             if (!response.ok) throw new Error(`Failed to fetch URL: ${response.statusText}`);
             const html = await response.text();
             const $ = cheerio.load(html);
-            title = $('title').text() || $('meta[property="og:title"]').attr('content') || 'Title not found';
-            description = $('meta[name="description"]').attr('content') || $('meta[property="og:description"]').attr('content') || '';
+            title = $('title').text() || '';
+            description = $('meta[name="description"]').attr('content') || '';
             bodyText = $('body').text().replace(/\s\s+/g, ' ').trim();
         } else if (contentType === 'video') {
             const youtubeVideoId = getYouTubeVideoId(content);
-            if (!youtubeVideoId) {
-                throw new Error("Invalid URL. Only YouTube video links are supported at this time.");
-            }
+            if (!youtubeVideoId) throw new Error("Invalid YouTube URL.");
+            
+            // --- NEW: FETCH TRANSCRIPT & DETAILS ---
             const details = await getYouTubeVideoDetails(youtubeVideoId);
+            const transcript = await getYouTubeTranscript(youtubeVideoId);
+            
             title = details.title;
             description = details.description;
+            
+            // If transcript exists, prioritize it. Otherwise use description.
+            bodyText = transcript.length > 0 
+                ? `TRANSCRIPT:\n${transcript}` 
+                : `DESCRIPTION:\n${description}`;
         }
         
-        finalPrompt += `Title: "${title}". Description: "${description}". Body Text: "${bodyText.substring(0, 5000)}"`;
+        finalPrompt += `Title: "${title}". Body Text: "${bodyText.substring(0, 15000)}"`; // Increased limit for transcripts
         contentForAI = [{ text: finalPrompt }];
     }
 
@@ -117,9 +95,8 @@ export async function POST(req: NextRequest) {
     const result = await model.generateContent(contentForAI);
     const aiJson = JSON.parse(result.response.text());
     
-    // The embedding is now created from the AI-enriched summary, which contains the tags.
+    // Embed the AI-enriched summary
     const textForEmbedding = `Title: ${aiJson.title}\nSummary: ${aiJson.summary}`;
-
     const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
     const embeddingResult = await embeddingModel.embedContent(textForEmbedding);
     const embedding = embeddingResult.embedding.values;
@@ -129,8 +106,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ message: 'Success', newItem });
 
-  } catch (error: unknown) {
-    if (error instanceof Error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Error' }, { status: 500 });
   }
 }
