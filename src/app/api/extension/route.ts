@@ -6,7 +6,6 @@ import { GoogleGenerativeAI, SchemaType, Schema } from '@google/generative-ai'
 // 1. Setup Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-// FIX: Remove ': Schema' from here and add 'as Schema' at the end
 const jsonSchema = {
   type: SchemaType.OBJECT,
   properties: {
@@ -19,6 +18,27 @@ const jsonSchema = {
   },
   required: ["title", "summary", "tags"]
 } as Schema; 
+
+// --- HELPER: Retry Logic for Overloaded Models ---
+async function generateWithRetry(model: any, content: any, retries = 3, initialDelay = 2000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await model.generateContent(content);
+    } catch (error: any) {
+      // If it's the last attempt, or if it's NOT a 503/429 error, throw it.
+      const isOverloaded = error.message?.includes('503') || error.message?.includes('429') || error.message?.includes('overloaded');
+      
+      if (i === retries - 1 || !isOverloaded) {
+        throw error;
+      }
+
+      // Wait (Exponential Backoff: 2s, 4s, 8s...)
+      const waitTime = initialDelay * Math.pow(2, i);
+      console.log(`Gemini overloaded. Retrying in ${waitTime}ms... (Attempt ${i + 1}/${retries})`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+}
 
 export async function POST(req: Request) {
   const cookieStore = cookies()
@@ -37,7 +57,6 @@ export async function POST(req: Request) {
     let contentForAI: any[] = [];
     
     // --- 2. PREPARE CONTENT FOR GEMINI ---
-    
     let finalPrompt = `
       Analyze the following content. Perform these actions:
       1. Create a concise, descriptive title.
@@ -48,7 +67,6 @@ export async function POST(req: Request) {
     `;
 
     if (type === 'link') {
-        // Use the text scraped by the extension (pageText) if available
         const textToAnalyze = pageText || `Link URL: ${content} - Title: ${title}`;
         finalPrompt += `\n\nTitle: "${title}"\nURL: "${content}"\nPage Content: "${textToAnalyze.substring(0, 10000)}"`;
         contentForAI = [{ text: finalPrompt }];
@@ -58,7 +76,6 @@ export async function POST(req: Request) {
         contentForAI = [{ text: finalPrompt }];
     }
     else if (type === 'image') {
-        // Fetch the image from the URL provided by the extension
         try {
             const imageResp = await fetch(content);
             const imageBuffer = await imageResp.arrayBuffer();
@@ -72,18 +89,19 @@ export async function POST(req: Request) {
             ];
         } catch (e) {
             console.error("Failed to fetch image for analysis", e);
-            // Fallback if image fetch fails
             contentForAI = [{ text: finalPrompt + `\n\nImage URL: ${content} (Could not fetch image data)` }];
         }
     }
 
-    // --- 3. CALL GEMINI (Analysis) ---
+    // --- 3. CALL GEMINI (With Retry) ---
+    // If 2.5-flash keeps failing, switch string to "gemini-1.5-flash"
     const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.5-flash", // Updated to latest flash model if available, or keep 1.5-flash
+        model: "gemini-2.0-flash", 
         generationConfig: { responseMimeType: "application/json", responseSchema: jsonSchema }
     });
     
-    const result = await model.generateContent(contentForAI);
+    // FIX: Using the retry helper here
+    const result: any = await generateWithRetry(model, contentForAI);
     const aiJson = JSON.parse(result.response.text());
 
     // --- 4. CALL GEMINI (Embeddings) ---
@@ -96,7 +114,7 @@ export async function POST(req: Request) {
     const insertData = {
       user_id: user.id,
       content_type: type,
-      original_content: content, // The URL or Note text
+      original_content: content,
       original_url: sourceUrl || content,
       processed_title: aiJson.title,
       processed_summary: aiJson.summary,
