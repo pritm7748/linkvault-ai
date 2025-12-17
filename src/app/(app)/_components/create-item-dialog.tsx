@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Plus, Link as LinkIcon, FileText, Image as ImageIcon, Video, LoaderCircle } from 'lucide-react'
+import { Plus, Link as LinkIcon, FileText, Image as ImageIcon, Video, LoaderCircle, FileUp } from 'lucide-react'
 
 export function CreateItemDialog() {
   const [isOpen, setIsOpen] = useState(false)
@@ -72,12 +72,15 @@ export function CreateItemDialog() {
           <DialogTitle className="text-xl font-bold">Add to Vault</DialogTitle>
         </DialogHeader>
         
+        {/* FIX: Changed grid-cols-4 to grid-cols-5 to fit the new Document tab */}
         <Tabs defaultValue="link" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-stone-100 p-1">
-            <TabsTrigger value="link" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer"><LinkIcon className="h-4 w-4" /></TabsTrigger>
-            <TabsTrigger value="note" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer"><FileText className="h-4 w-4" /></TabsTrigger>
-            <TabsTrigger value="image" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer"><ImageIcon className="h-4 w-4" /></TabsTrigger>
-            <TabsTrigger value="video" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer"><Video className="h-4 w-4" /></TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 bg-stone-100 p-1">
+            <TabsTrigger value="link" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer" title="Link"><LinkIcon className="h-4 w-4" /></TabsTrigger>
+            <TabsTrigger value="note" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer" title="Note"><FileText className="h-4 w-4" /></TabsTrigger>
+            <TabsTrigger value="image" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer" title="Image"><ImageIcon className="h-4 w-4" /></TabsTrigger>
+            <TabsTrigger value="video" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer" title="Video"><Video className="h-4 w-4" /></TabsTrigger>
+            {/* NEW TAB */}
+            <TabsTrigger value="document" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer" title="Document"><FileUp className="h-4 w-4" /></TabsTrigger>
           </TabsList>
 
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
@@ -93,7 +96,6 @@ export function CreateItemDialog() {
             <TabsContent value="note" className="space-y-4 mt-0">
                 <div className="space-y-2">
                     <Label>Your Note</Label>
-                    {/* FIX: Added max-h-[350px] and overflow-y-auto to create vertical scrollbar */}
                     <Textarea 
                         name="content" 
                         placeholder="Type your thought..." 
@@ -115,6 +117,21 @@ export function CreateItemDialog() {
                     <Label>YouTube URL</Label>
                     <Input name="content" type="url" placeholder="https://youtube.com/watch?v=..." required={activeTab === 'video'} className="bg-stone-50" />
                     <p className="text-xs text-stone-500">We will fetch the transcript and summarize it.</p>
+                </div>
+            </TabsContent>
+
+            {/* NEW CONTENT FOR DOCUMENT */}
+            <TabsContent value="document" className="space-y-4 mt-0">
+                <div className="space-y-2">
+                    <Label>Upload Document</Label>
+                    <Input 
+                        name="file" 
+                        type="file" 
+                        accept=".pdf,.docx,.txt,.md" 
+                        className="cursor-pointer bg-stone-50" 
+                        required={activeTab === 'document'} 
+                    />
+                    <p className="text-xs text-stone-500">Supported: PDF, Word, Text, Markdown.</p>
                 </div>
             </TabsContent>
 
