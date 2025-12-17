@@ -7,7 +7,18 @@ import { getYouTubeVideoId, getYouTubeVideoDetails, getYouTubeTranscript } from 
 import { generateContentWithFallback, embedContentWithFallback } from '@/lib/gemini'
 import * as mammoth from 'mammoth';
 
-// FIX: Use require() to avoid "Export default doesn't exist" error
+// --- FIX: Polyfill DOMMatrix for Vercel/Node environment ---
+// pdf-parse relies on an old version of pdf.js that expects DOMMatrix to exist.
+if (typeof global.DOMMatrix === 'undefined') {
+  // @ts-ignore
+  global.DOMMatrix = class {
+    constructor() { return this; }
+    // Add dummy methods if needed, but usually just existing is enough
+    toString() { return '[object DOMMatrix]'; }
+  };
+}
+
+// FIX: Use require() to avoid ESM errors with pdf-parse
 const pdf = require('pdf-parse');
 
 const jsonSchema: Schema = {
@@ -85,7 +96,6 @@ export async function POST(req: NextRequest) {
         }
 
         // 3. Feed to Gemini
-        // Limit text to avoid token limits (approx 15k chars is safe for Flash models)
         finalPrompt += `Document Title: "${file.name}"\n\nDocument Text:\n${extractedText.substring(0, 20000)}`;
         contentForAI = [{ text: finalPrompt }];
     }
