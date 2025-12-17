@@ -7,7 +7,7 @@ import { SendHorizontal, Bot, LoaderCircle, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 type Message = { id: number; role: 'user'|'assistant'; content: string; };
-type ChatInterfaceProps = { chatId: string; initialMessages: Message[]; initialTitle?: string; }; // Title prop no longer used but kept for interface compatibility
+type ChatInterfaceProps = { chatId: string; initialMessages: Message[]; initialTitle?: string; };
 
 export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
@@ -22,7 +22,6 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
 
-  // ... (handleSubmit and handleKeyDown are same as before) ...
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault(); if (!input.trim() || isLoading) return;
     const userMessage = input.trim(); setInput(''); setError(null);
@@ -41,13 +40,10 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); }
   }
 
-  // --- RENDER ---
   return (
     <div className="flex flex-col h-full w-full bg-white relative">
       
-      {/* HEADER REMOVED - Handled by SearchBar now */}
-
-      {/* --- MESSAGES AREA --- */}
+      {/* MESSAGES AREA */}
       <div className="flex-1 overflow-y-auto w-full scroll-smooth">
         <div className="max-w-3xl mx-auto px-4 py-6 min-h-full flex flex-col justify-end">
             {messages.length === 0 ? (
@@ -90,7 +86,8 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
       </div>
 
       {/* --- FOOTER (Input) --- */}
-      <div className="w-full bg-white px-3 pb-3 pt-0 z-10">
+      {/* FIX: Added z-20 so it sits on top of messages on mobile if needed */}
+      <div className="w-full bg-white px-3 pb-3 pt-0 z-20 md:z-10">
         <div className="max-w-3xl mx-auto w-full">
             <div className="relative flex items-end gap-2 bg-stone-50 border border-transparent focus-within:border-stone-200 focus-within:bg-white rounded-[24px] p-2 pl-4 transition-all">
                 <Textarea ref={textareaRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder="Ask a question..." className="min-h-[44px] max-h-[150px] w-full resize-none border-0 shadow-none focus-visible:ring-0 py-2.5 px-0 text-base bg-transparent text-stone-900 placeholder:text-stone-500" rows={1} />
