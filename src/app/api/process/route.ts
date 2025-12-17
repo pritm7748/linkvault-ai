@@ -5,9 +5,10 @@ import { SchemaType, Schema } from '@google/generative-ai'
 import * as cheerio from 'cheerio';
 import { getYouTubeVideoId, getYouTubeVideoDetails, getYouTubeTranscript } from '@/lib/youtube'
 import { generateContentWithFallback, embedContentWithFallback } from '@/lib/gemini'
-// @ts-ignore
-import pdf from 'pdf-parse';
 import * as mammoth from 'mammoth';
+
+// FIX: Use require() to avoid "Export default doesn't exist" error
+const pdf = require('pdf-parse');
 
 const jsonSchema: Schema = {
   type: SchemaType.OBJECT,
@@ -56,12 +57,12 @@ export async function POST(req: NextRequest) {
       contentForAI = [{ text: finalPrompt }, { inlineData: { mimeType: file.type, data: base64Data } }];
       originalContent = file.name;
     } 
-    // --- NEW: DOCUMENT HANDLER ---
+    // DOCUMENT HANDLER
     else if (contentType === 'document') {
         const file = formData.get('file') as File;
         if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 });
         
-        // 1. Upload Original File (so user can download it later)
+        // 1. Upload Original File
         const filePath = `${user.id}/docs/${Date.now()}-${file.name}`;
         const { data: uploadData, error: uploadError } = await supabase.storage.from('vault.images').upload(filePath, file);
         if (uploadError) throw new Error(`Storage Error: ${uploadError.message}`);
