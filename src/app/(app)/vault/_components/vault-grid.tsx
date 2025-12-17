@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { MoreHorizontal, Trash2, Edit, FolderInput, Star, LogOut, Video, Link2, FileText, Image as ImageIcon, X as XIcon } from 'lucide-react'
+import { MoreHorizontal, Trash2, Edit, FolderInput, Star, LogOut, Video, Link2, FileText, Image as ImageIcon, X as XIcon, File } from 'lucide-react'
 import { ItemDetailsDialog } from './item-details-dialog'
 import { MoveToCollectionDialog } from './move-to-collection-dialog'
 
@@ -21,7 +21,6 @@ type VaultItem = {
 };
 type Collection = { id: number; name: string };
 
-// FIX: Added 'emptyMessage' prop
 export function VaultGrid({ 
     initialItems, 
     collections,
@@ -52,11 +51,13 @@ export function VaultGrid({
   const pathname = usePathname();
   const isInCollectionView = pathname.includes('/collections/');
 
+  // FIX: Added 'document' style
   const getTypeStyles = (type: string) => {
     switch (type) {
         case 'video': return { color: 'border-t-red-500', icon: <Video className="h-3 w-3 text-red-500" /> };
         case 'link': return { color: 'border-t-blue-500', icon: <Link2 className="h-3 w-3 text-blue-500" /> };
         case 'image': return { color: 'border-t-purple-500', icon: <ImageIcon className="h-3 w-3 text-purple-500" /> };
+        case 'document': return { color: 'border-t-emerald-500', icon: <File className="h-3 w-3 text-emerald-500" /> };
         default: return { color: 'border-t-amber-500', icon: <FileText className="h-3 w-3 text-amber-500" /> };
     }
   }
@@ -290,7 +291,6 @@ export function VaultGrid({
           })}
         </div>
       ) : ( 
-        // FIX: Display Custom Empty Message or Default
         <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-stone-200 rounded-lg bg-stone-50/50">
             <div className="bg-stone-100 p-4 rounded-full mb-4">
                 <FolderInput className="h-8 w-8 text-stone-400" />

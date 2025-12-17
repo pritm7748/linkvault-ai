@@ -136,7 +136,6 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      {/* FIX 1: Flex Column + Fixed Height + Hidden Overflow on Parent */}
       <DialogContent className="bg-white border-slate-200 text-slate-900 sm:max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
         
         {/* HEADER (Fixed) */}
@@ -201,7 +200,6 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
                         {item.content_type === 'note' ? 'Full Note' : 'Original Source'}
                     </Label>
                     
-                    {/* FIX 2: Check content_type. If note, preserve whitespace. If link, break all. */}
                     <div className={cn(
                         "text-sm text-slate-500 rounded-md bg-slate-50 p-3 border border-slate-100",
                         item.content_type === 'note' ? "whitespace-pre-wrap" : "break-all"
@@ -215,10 +213,11 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
                     </a>
                     )}
 
-                    {item.content_type === 'image' && (
+                    {/* FIX: Show download for both images AND documents */}
+                    {(item.content_type === 'image' || item.content_type === 'document') && (
                     <Button variant="outline" size="sm" onClick={handleDownload} className="mt-2">
                         <Download className="mr-2 h-4 w-4" />
-                        {item.storage_path ? "Download Image" : "Open Original Image"}
+                        {item.content_type === 'image' ? "Download Image" : "Download Document"}
                     </Button>
                     )}
                 </div>
