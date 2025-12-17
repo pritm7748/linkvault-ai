@@ -41,8 +41,8 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
   }
 
   return (
-    // FIX: absolute inset-0 forces it to fill the fixed parent perfectly
-    <div className="absolute inset-0 flex flex-col bg-white">
+    // FIX: Reverted to h-full (safest for desktop flex layouts)
+    <div className="flex flex-col h-full w-full bg-white relative">
       
       {/* MESSAGES AREA */}
       <div className="flex-1 overflow-y-auto w-full scroll-smooth">
@@ -87,7 +87,7 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
       </div>
 
       {/* --- FOOTER (Input) --- */}
-      <div className="w-full bg-white px-3 pb-3 pt-0 z-10 border-t border-transparent">
+      <div className="w-full bg-white px-3 pb-3 pt-0 z-20 md:z-10 border-t border-transparent">
         <div className="max-w-3xl mx-auto w-full">
             <div className="relative flex items-end gap-2 bg-stone-50 border border-transparent focus-within:border-stone-200 focus-within:bg-white rounded-[24px] p-2 pl-4 transition-all">
                 <Textarea ref={textareaRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder="Ask a question..." className="min-h-[44px] max-h-[150px] w-full resize-none border-0 shadow-none focus-visible:ring-0 py-2.5 px-0 text-base bg-transparent text-stone-900 placeholder:text-stone-500" rows={1} />

@@ -10,13 +10,13 @@ export function AppMain({ children }: { children: React.ReactNode }) {
   return (
     <main
       className={cn(
-        "flex flex-1 flex-col w-full max-w-[100vw] overflow-x-hidden", // FIX: Prevent horizontal scroll globally
+        "flex flex-1 flex-col w-full",
         // IF CHAT: 
-        // 1. h-[calc(100dvh-3.5rem)]: Use 'dvh' to respect mobile address bars.
-        // 2. fixed: Keeps it stuck in place so the header never scrolls away.
+        // Mobile: 'fixed' locks it to the screen (solves scroll issues).
+        // Desktop (md): 'static' returns it to normal flow, 'h-[calc...]' fits it to the main area.
         isChatPage 
-          ? "h-[calc(100dvh-3.5rem)] p-0 overflow-hidden bg-white fixed inset-x-0 bottom-0 top-14" 
-          : "p-4 md:p-8 gap-4 bg-muted/40 overflow-y-auto h-[calc(100dvh-3.5rem)]" // Ensure non-chat pages also respect mobile height
+          ? "fixed inset-x-0 top-14 bottom-0 md:static md:top-auto md:bottom-auto md:inset-auto md:h-[calc(100vh-3.5rem)] p-0 overflow-hidden bg-white z-0" 
+          : "p-4 md:p-8 gap-4 bg-muted/40 overflow-y-auto h-[calc(100dvh-3.5rem)] md:h-auto"
       )}
     >
       {children}

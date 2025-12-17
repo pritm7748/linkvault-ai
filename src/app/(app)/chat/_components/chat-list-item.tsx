@@ -6,12 +6,8 @@ import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { 
-    Clock, Pencil, Trash2, Check, X, MessageSquare, Pin, MoreHorizontal 
-} from 'lucide-react'
-import { 
-    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu"
+import { Clock, Pencil, Trash2, Check, X, MessageSquare, Pin, MoreHorizontal } from 'lucide-react'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { renameChat, deleteChat, togglePinChat } from '../actions'
 
 type ChatListItemProps = {
@@ -48,7 +44,7 @@ export function ChatListItem({ chat }: ChatListItemProps) {
   if (isDeleting) return null; 
 
   return (
-    <div className="group relative w-full max-w-full overflow-hidden"> 
+    <div className="group relative w-full">
         {isEditing ? (
             <div className="flex items-center gap-2 p-3 bg-white border border-stone-300 rounded-lg shadow-sm w-full">
                 <Input 
@@ -71,7 +67,7 @@ export function ChatListItem({ chat }: ChatListItemProps) {
                 <Card className={`flex flex-row items-center justify-between p-3 md:p-4 border-stone-200 hover:border-stone-400 hover:shadow-md transition-all cursor-pointer bg-white group w-full ${chat.is_pinned ? 'border-l-4 border-l-stone-900 bg-stone-50/50' : ''}`}>
                     
                     {/* Left: Icon + Text */}
-                    <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div className={`p-2 rounded-full border border-stone-100 shrink-0 transition-colors ${chat.is_pinned ? 'bg-stone-900 text-white' : 'bg-stone-50 text-stone-400 group-hover:text-purple-600'}`}>
                             {chat.is_pinned ? <Pin className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
                         </div>
@@ -86,8 +82,7 @@ export function ChatListItem({ chat }: ChatListItemProps) {
                         </div>
                     </div>
 
-                    {/* Right: Actions */}
-                    {/* DESKTOP: Show all buttons */}
+                    {/* Desktop Actions */}
                     <div className="hidden md:flex items-center gap-1 pl-2 border-l border-transparent md:border-stone-100 md:group-hover:border-stone-200 shrink-0">
                         <Button variant="ghost" size="icon" className="h-9 w-9 text-stone-400 hover:text-stone-700" onClick={handlePin} title="Pin">
                             <Pin className={`h-4 w-4 ${chat.is_pinned ? 'fill-current' : ''}`} />
@@ -100,7 +95,7 @@ export function ChatListItem({ chat }: ChatListItemProps) {
                         </Button>
                     </div>
 
-                    {/* MOBILE: Show Dropdown Menu (...) to save space */}
+                    {/* Mobile Actions (Dropdown) */}
                     <div className="md:hidden flex items-center pl-1 shrink-0">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
