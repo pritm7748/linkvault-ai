@@ -1,7 +1,7 @@
 import { createServer } from '@/lib/supabase/server'
 import { UpdatePasswordForm } from './_components/update-password-form'
+import { DeleteAccountSection } from './_components/delete-account-section' // Import New Component
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { cookies } from 'next/headers'
 
 export default async function ProfilePage() {
@@ -13,7 +13,6 @@ export default async function ProfilePage() {
 
   return (
     <div className="py-6">
-      {/* Removed the <h1> here because the Header now shows "Profile Settings" */}
       
       <div className="grid gap-8 md:grid-cols-2 max-w-4xl">
         
@@ -35,7 +34,7 @@ export default async function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Conditionally render the password update form */}
+        {/* Change Password (Conditional) */}
         {isOAuthUser ? (
           <Card className="bg-white border-slate-200 shadow-sm">
             <CardHeader>
@@ -51,24 +50,8 @@ export default async function ProfilePage() {
           <UpdatePasswordForm />
         )}
 
-        {/* Danger Zone for Account Deletion */}
-        <div className="md:col-span-2">
-            <Card className="border-red-500/50 bg-red-50">
-                <CardHeader>
-                    <CardTitle className="text-red-800">Danger Zone</CardTitle>
-                    <CardDescription className="text-red-700">These actions are irreversible. Please proceed with caution.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <h3 className="font-semibold text-red-800">Delete Account</h3>
-                            <p className="text-sm text-red-600">Permanently delete your account and all of your data.</p>
-                        </div>
-                        <Button variant="destructive" disabled>Delete Account</Button>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+        {/* Danger Zone - NOW FUNCTIONAL */}
+        <DeleteAccountSection />
 
       </div>
     </div>
