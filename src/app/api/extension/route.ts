@@ -79,7 +79,7 @@ export async function POST(req: Request) {
 
     // --- FIX: USE FALLBACK UTILITY ---
     const result: any = await generateContentWithFallback(
-        "gemini-2.5-flash", 
+        "gemini-3-flash-preview", 
         { responseMimeType: "application/json", responseSchema: jsonSchema },
         contentForAI
     );

@@ -1,5 +1,6 @@
 import { createServer } from '@/lib/supabase/server'
 import { VaultGrid } from '@/app/(app)/vault/_components/vault-grid'
+import { ShareCollectionDialog } from '../_components/share-collection-dialog'
 import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
 
@@ -18,10 +19,10 @@ export default async function CollectionPage(props: Props) {
   const cookieStore = cookies()
   const supabase = createServer(cookieStore)
 
-  // 1. Fetch Collection Info
+  // 1. Fetch Collection Info (Added is_public)
   const { data: collection, error: collectionError } = await supabase
     .from('collections')
-    .select('name')
+    .select('name, is_public')
     .eq('id', collectionId)
     .single()
 
@@ -32,11 +33,11 @@ export default async function CollectionPage(props: Props) {
   // 2. Build Query
   let dbQuery = supabase
     .from('vault_items')
-    .select('id, processed_title, processed_summary, processed_tags, is_favorited, content_type')
+    .select('id, processed_title, processed_summary, processed_tags, is_favorited, content_type, original_content, storage_path')
     .eq('collection_id', collectionId)
     .order('created_at', { ascending: false })
 
-  // 3. Search Logic (Scoped to this collection)
+  // 3. Search Logic
   if (query) {
     dbQuery = dbQuery.or(`processed_title.ilike.%${query}%,processed_summary.ilike.%${query}%`)
   }
@@ -53,15 +54,18 @@ export default async function CollectionPage(props: Props) {
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <p className="text-xs font-bold uppercase text-stone-400 tracking-wider">Collection</p>
-        <h1 className="text-2xl md:text-3xl font-serif font-bold text-stone-900">
-            {query ? `Search: "${query}"` : collection.name}
-        </h1>
+        <div className="flex items-center justify-between">
+            <h1 className="text-2xl md:text-3xl font-serif font-bold text-stone-900">
+                {query ? `Search: "${query}"` : collection.name}
+            </h1>
+            {/* NEW SHARE BUTTON */}
+            <ShareCollectionDialog collectionId={Number(collectionId)} initialIsPublic={collection.is_public} />
+        </div>
       </div>
       
       <VaultGrid 
         initialItems={items} 
         collections={allCollections} 
-        // FIX: Custom Empty Message logic
         emptyMessage={
             query 
                 ? `No items found in "${collection.name}" matching "${query}"` 

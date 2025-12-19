@@ -27,9 +27,10 @@ type ItemDetailsDialogProps = {
   isOpen: boolean;
   onClose: () => void;
   onUpdate: (updatedItem: VaultItemFull) => void;
+  readOnly?: boolean; // NEW PROP
 };
 
-export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDetailsDialogProps) {
+export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate, readOnly = false }: ItemDetailsDialogProps) {
   const [item, setItem] = useState<VaultItemFull | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -39,8 +40,6 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
   const [title, setTitle] = useState('')
   const [summary, setSummary] = useState('')
   const [tags, setTags] = useState('')
-  
-  // Image Display State
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   
   const supabase = createClient()
@@ -53,6 +52,9 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
         setImageUrl(null)
 
         try {
+          // If readOnly (public), we might need a different API route that doesn't check auth, 
+          // OR we assume the user viewing this has permission (handled by RLS or public route).
+          // For now, we assume standard fetch works if RLS allows public read.
           const response = await fetch(`/api/vault/${itemId}`)
           if (!response.ok) throw new Error('Failed to fetch item details.')
           const data: VaultItemFull = await response.json()
@@ -88,7 +90,7 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
   }, [itemId, isOpen])
 
   const handleSaveChanges = async () => {
-    if (!item) return;
+    if (!item || readOnly) return; // Guard
     setIsLoading(true)
     setError(null)
     try {
@@ -114,7 +116,6 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
 
   const handleDownload = async () => {
     if (!item) return;
-    
     if (item.storage_path) {
         try {
             const { data, error } = await supabase.storage
@@ -128,7 +129,6 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
         }
         return;
     }
-
     if (item.original_content) {
         window.open(item.original_content, '_blank');
     }
@@ -138,7 +138,6 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-white border-slate-200 text-slate-900 sm:max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
         
-        {/* HEADER (Fixed) */}
         <DialogHeader className="p-6 pb-2 flex-none border-b border-transparent">
           <DialogTitle className={isEditing ? 'sr-only' : 'text-2xl font-serif pr-8'}>
             {item?.processed_title || 'Loading Item...'}
@@ -155,7 +154,6 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
           </DialogDescription>
         </DialogHeader>
 
-        {/* SCROLLABLE CONTENT BODY */}
         <div className="flex-1 overflow-y-auto p-6 pt-2">
             {isLoading && <div className="flex justify-center p-12"><LoaderCircle className="animate-spin" /></div>}
             {error && <p className="text-red-600 p-4">{error}</p>}
@@ -163,14 +161,12 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
             {item && !isLoading && (
               <div className="space-y-6">
                 
-                {/* Image Preview */}
                 {item.content_type === 'image' && imageUrl && (
                     <div className="rounded-lg overflow-hidden border border-slate-200 bg-slate-50 flex justify-center">
                         <img src={imageUrl} alt="Saved" className="max-w-full max-h-[500px] object-contain" />
                     </div>
                 )}
 
-                {/* Summary */}
                 <div className="space-y-2">
                     <Label className="font-semibold text-base">Summary</Label>
                     {isEditing ? (
@@ -180,7 +176,6 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
                     )}
                 </div>
                 
-                {/* Tags */}
                 <div className="space-y-2">
                     <Label className="font-semibold text-base">Tags</Label>
                     {isEditing ? (
@@ -194,7 +189,6 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
                     )}
                 </div>
 
-                {/* Original Content / Source */}
                 <div className="space-y-2">
                     <Label className="font-semibold text-base">
                         {item.content_type === 'note' ? 'Full Note' : 'Original Source'}
@@ -213,7 +207,6 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
                     </a>
                     )}
 
-                    {/* FIX: Show download for both images AND documents */}
                     {(item.content_type === 'image' || item.content_type === 'document') && (
                     <Button variant="outline" size="sm" onClick={handleDownload} className="mt-2">
                         <Download className="mr-2 h-4 w-4" />
@@ -225,8 +218,8 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate }: ItemDet
             )}
         </div>
 
-        {/* FOOTER (Fixed) */}
-        {item && !isLoading && (
+        {/* FOOTER - HIDDEN IF READONLY */}
+        {item && !isLoading && !readOnly && (
             <DialogFooter className="p-4 border-t bg-white flex-none">
             {isEditing ? (
                 <Button onClick={handleSaveChanges} disabled={isLoading}>
