@@ -16,30 +16,55 @@ export async function deleteAccount() {
 
   // 2. Check for Service Key
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!serviceKey) {
-    console.error("CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing in environment variables.")
-    return { error: 'Server configuration error. Please contact support.' }
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+
+  if (!serviceKey || !supabaseUrl) {
+    console.error("Server Config Error: Missing SUPABASE_SERVICE_ROLE_KEY")
+    return { error: 'Server configuration error. Admin key missing.' }
   }
 
   try {
-    // 3. Initialize Admin Client
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceKey,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    )
+    // 3. Initialize Admin Client (Bypasses RLS)
+    const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
 
-    // 4. Attempt Deletion
+    // 4. EXPLICITLY DELETE DATA FIRST (Aggressive Cleanup)
+    // We do this manually to ensure data is gone even if Auth deletion fails
+    const { error: itemsError } = await supabaseAdmin
+        .from('vault_items')
+        .delete()
+        .eq('user_id', user.id)
+    
+    if (itemsError) {
+        console.error("Manual Data Cleanup Failed (Items):", itemsError)
+        return { error: `Failed to delete items: ${itemsError.message}` }
+    }
+
+    const { error: collectionsError } = await supabaseAdmin
+        .from('collections')
+        .delete()
+        .eq('user_id', user.id)
+
+    if (collectionsError) {
+        console.error("Manual Data Cleanup Failed (Collections):", collectionsError)
+        return { error: `Failed to delete collections: ${collectionsError.message}` }
+    }
+
+    // 5. NOW Delete the User
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id)
 
     if (deleteError) {
         console.error("Delete User Failed:", deleteError.message)
-        return { error: deleteError.message } // Pass the actual error to the UI
+        return { error: `Auth Deletion Failed: ${deleteError.message}` }
     }
 
   } catch (error: any) {
     console.error("Unexpected Server Error:", error)
-    return { error: 'An unexpected error occurred during deletion.' }
+    return { error: `Server Error: ${error.message || 'Unknown'}` }
   }
 
   return { success: true }
