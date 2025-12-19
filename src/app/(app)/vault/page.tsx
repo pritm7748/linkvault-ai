@@ -1,6 +1,7 @@
 import { createServer } from '@/lib/supabase/server'
 import { VaultGrid } from '@/app/(app)/vault/_components/vault-grid'
 import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 
 export default async function VaultPage(props: {
   searchParams?: Promise<{ q?: string }>
@@ -11,22 +12,32 @@ export default async function VaultPage(props: {
   const cookieStore = cookies()
   const supabase = createServer(cookieStore)
 
-  // 1. Base Query
+  // 1. Get User (Strict Check)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    redirect('/login')
+  }
+
+  // 2. Base Query (Restricted to Current User)
   let dbQuery = supabase
     .from('vault_items')
     .select('id, processed_title, processed_summary, processed_tags, is_favorited, content_type')
+    .eq('user_id', user.id) // <--- CRITICAL FIX
     .order('created_at', { ascending: false })
 
-  // 2. SEARCH LOGIC: Title OR Summary
+  // 3. SEARCH LOGIC
   if (query) {
-    // This syntax says: "title contains query OR summary contains query"
     dbQuery = dbQuery.or(`processed_title.ilike.%${query}%,processed_summary.ilike.%${query}%`)
   }
 
-  // 3. Fetch Collections (for the dropdowns)
+  // 4. Fetch Collections (Restricted to Current User)
   const [itemsResult, collectionsResult] = await Promise.all([
     dbQuery,
-    supabase.from('collections').select('id, name').order('name')
+    supabase
+        .from('collections')
+        .select('id, name')
+        .eq('user_id', user.id) // <--- CRITICAL FIX
+        .order('name')
   ]);
 
   const items = itemsResult.data || []

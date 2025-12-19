@@ -5,7 +5,7 @@ import { SideNav } from './_components/sidenav'
 import { SearchBar } from './_components/search-bar'
 import { Menu } from 'lucide-react'
 import { cookies } from 'next/headers'
-import { AppMain } from './_components/app-main' // --- IMPORT THIS ---
+import { AppMain } from './_components/app-main'
 
 export default async function AppLayout({
   children,
@@ -15,19 +15,24 @@ export default async function AppLayout({
   const cookieStore = cookies()
   const supabase = createServer(cookieStore)
   
-  const [
-    { data: { session } },
-    { data: collections }
-  ] = await Promise.all([
-    supabase.auth.getSession(),
-    supabase.from('collections').select('id, name').order('name')
-  ]);
+  // 1. Get User First
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // 2. Fetch Collections (Strictly for this user)
+  // If no user (e.g. during redirect), return empty array to prevent error
+  const { data: collections } = user 
+    ? await supabase
+        .from('collections')
+        .select('id, name')
+        .eq('user_id', user.id) // <--- CRITICAL FIX
+        .order('name')
+    : { data: [] }
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-background md:block">
         <SideNav 
-          userEmail={session?.user.email || 'No user'} 
+          userEmail={user?.email || 'No user'} 
           collections={collections || []} 
           isSheet={false} 
         />
@@ -44,7 +49,7 @@ export default async function AppLayout({
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col p-0">
               <SideNav 
-                userEmail={session?.user.email || 'No user'} 
+                userEmail={user?.email || 'No user'} 
                 collections={collections || []} 
                 isSheet={true} 
               />
@@ -56,7 +61,6 @@ export default async function AppLayout({
           </div>
         </header>
 
-        {/* --- REPLACE OLD <main> WITH SMART <AppMain> --- */}
         <AppMain>
           {children}
         </AppMain>
