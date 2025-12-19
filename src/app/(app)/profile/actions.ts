@@ -19,51 +19,52 @@ export async function deleteAccount() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 
   if (!serviceKey || !supabaseUrl) {
-    console.error("Server Config Error: Missing SUPABASE_SERVICE_ROLE_KEY")
     return { error: 'Server configuration error. Admin key missing.' }
   }
 
   try {
-    // 3. Initialize Admin Client (Bypasses RLS)
+    // 3. Initialize Admin Client
     const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
+      auth: { autoRefreshToken: false, persistSession: false }
     })
 
-    // 4. EXPLICITLY DELETE DATA FIRST (Aggressive Cleanup)
-    // We do this manually to ensure data is gone even if Auth deletion fails
-    const { error: itemsError } = await supabaseAdmin
+    console.log(`[Delete Account] Attempting to delete user: ${user.id}`)
+
+    // 4. Aggressive Data Cleanup
+    const { count: itemsCount, error: itemsError } = await supabaseAdmin
         .from('vault_items')
-        .delete()
+        .delete({ count: 'exact' }) // Count how many we delete
         .eq('user_id', user.id)
     
     if (itemsError) {
-        console.error("Manual Data Cleanup Failed (Items):", itemsError)
+        console.error("[Delete Account] Items Delete Error:", itemsError)
         return { error: `Failed to delete items: ${itemsError.message}` }
     }
+    console.log(`[Delete Account] Deleted ${itemsCount} vault items.`)
 
-    const { error: collectionsError } = await supabaseAdmin
+    const { count: collectionsCount, error: collectionsError } = await supabaseAdmin
         .from('collections')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('user_id', user.id)
 
     if (collectionsError) {
-        console.error("Manual Data Cleanup Failed (Collections):", collectionsError)
+        console.error("[Delete Account] Collections Delete Error:", collectionsError)
         return { error: `Failed to delete collections: ${collectionsError.message}` }
     }
+    console.log(`[Delete Account] Deleted ${collectionsCount} collections.`)
 
-    // 5. NOW Delete the User
+    // 5. Delete User
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id)
 
     if (deleteError) {
-        console.error("Delete User Failed:", deleteError.message)
+        console.error("[Delete Account] Auth Delete Error:", deleteError)
         return { error: `Auth Deletion Failed: ${deleteError.message}` }
     }
+    
+    console.log("[Delete Account] User deleted successfully.")
 
   } catch (error: any) {
-    console.error("Unexpected Server Error:", error)
+    console.error("[Delete Account] Unexpected Error:", error)
     return { error: `Server Error: ${error.message || 'Unknown'}` }
   }
 
