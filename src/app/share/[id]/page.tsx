@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Lock } from 'lucide-react'
+import { SaveToVaultButton } from './save-button' // Import the new button
 
 type Props = {
   params: Promise<{ id: string }>
@@ -20,14 +21,12 @@ export default async function SharedCollectionPage(props: Props) {
   const cookieStore = cookies()
   const supabase = createServer(cookieStore)
 
-  // 1. Fetch Collection & Check Visibility
   const { data: collection, error } = await supabase
     .from('collections')
     .select('name, is_public')
     .eq('id', collectionId)
     .single()
 
-  // 2. Handle Private/Missing Collections
   if (error || !collection || !collection.is_public) {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen gap-6 bg-stone-50 text-center p-4">
@@ -47,7 +46,6 @@ export default async function SharedCollectionPage(props: Props) {
     )
   }
 
-  // 3. Fetch Items for the Collection
   let dbQuery = supabase
     .from('vault_items')
     .select('id, processed_title, processed_summary, processed_tags, is_favorited, content_type, original_content, storage_path')
@@ -62,18 +60,16 @@ export default async function SharedCollectionPage(props: Props) {
 
   return (
     <div className="min-h-screen bg-stone-50">
-      {/* Public Header */}
       <header className="bg-white border-b border-stone-200 px-4 md:px-8 py-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-2">
             <span className="font-serif font-bold text-xl tracking-tight">LinkVault AI</span>
             <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold uppercase tracking-wider">Public View</span>
         </div>
-        <Link href="/">
-            <Button variant="outline" size="sm">Create Your Own Vault</Button>
-        </Link>
+        
+        {/* NEW BUTTON COMPONENT */}
+        <SaveToVaultButton collectionId={collectionId} />
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto p-4 md:p-8 space-y-8">
         <div className="flex flex-col gap-2 border-b border-stone-200 pb-6">
             <p className="text-xs font-bold uppercase text-stone-400 tracking-wider">Shared Collection</p>
@@ -82,8 +78,8 @@ export default async function SharedCollectionPage(props: Props) {
 
         <VaultGrid 
             initialItems={items || []} 
-            collections={[]} // Pass empty collections since visitors can't move items
-            readOnly={true} // ENABLE READ-ONLY MODE
+            collections={[]} 
+            readOnly={true} 
             emptyMessage={query ? `No items found matching "${query}"` : "This collection is empty."}
         />
       </main>

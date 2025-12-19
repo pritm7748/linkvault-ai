@@ -8,18 +8,15 @@ type Props = {
 }
 
 export async function GET(req: NextRequest, props: Props) {
-  // 1. Await params before accessing id
   const params = await props.params;
   const { id } = params;
 
   const cookieStore = cookies()
   const supabase = createServer(cookieStore)
   
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
+  // FIX: Removed strict auth check for GET to allow Public View
+  // The Database RLS Policies will handle security (Owner OR Public)
+  
   if (!id) {
     return NextResponse.json({ error: 'Item ID is required' }, { status: 400 })
   }
@@ -28,25 +25,24 @@ export async function GET(req: NextRequest, props: Props) {
     .from('vault_items')
     .select('*')
     .eq('id', id)
-    .eq('user_id', user.id)
     .single()
 
   if (error) {
     console.error('Error fetching item:', error)
-    return NextResponse.json({ error: 'Item not found or database error' }, { status: 404 })
+    return NextResponse.json({ error: 'Item not found or access denied' }, { status: 404 })
   }
 
   return NextResponse.json(item)
 }
 
 export async function PUT(req: NextRequest, props: Props) {
-  // 1. Await params here too
   const params = await props.params;
   const { id } = params;
 
   const cookieStore = cookies()
   const supabase = createServer(cookieStore)
   
+  // KEEP AUTH CHECK FOR PUT (Edit)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -82,12 +78,12 @@ export async function PUT(req: NextRequest, props: Props) {
 }
 
 export async function PATCH(req: NextRequest, props: Props) {
-  // 1. Await params here too
   const params = await props.params;
   
   const cookieStore = cookies()
   const supabase = createServer(cookieStore)
   
+  // KEEP AUTH CHECK FOR PATCH (Favorite)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
