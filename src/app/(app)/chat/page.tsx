@@ -51,7 +51,7 @@ export default async function ChatDashboard(props: {
       <div className="flex items-center justify-between">
         <div>
             <h1 className="text-3xl md:text-4xl font-serif font-bold text-stone-900">Chat History</h1>
-            <p className="text-stone-500 mt-2 text-lg">Pick up where you left off or start a new inquiry.</p>
+            <p className="text-stone-500 mt-2 text-lg">Chat with your vault, pick up where you left off or start a new inquiry.</p>
         </div>
         <form action={createNewChat}>
             <Button size="lg" className="bg-stone-900 hover:bg-stone-800 text-white shadow-lg cursor-pointer h-12 px-6 text-base">
