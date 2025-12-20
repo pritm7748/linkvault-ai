@@ -6,7 +6,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
 
 // We need two models: one for chat, one for vector embeddings
-const chatModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+const chatModel = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' })
 const embeddingModel = genAI.getGenerativeModel({ model: 'text-embedding-004' })
 
 export async function POST(req: NextRequest) {
@@ -63,20 +63,32 @@ export async function POST(req: NextRequest) {
 
     // We inject a "System Instruction" style prompt into the history
     const ragPrompt = `
-    You are LinkVault AI, a personalized knowledge assistant.
-    
-    USER QUESTION: "${message}"
+You are LinkVault AI, a highly intelligent and organized personal knowledge assistant. Your goal is to synthesize the user's saved notes, links, and content into clear, actionable answers.
 
-    Here is relevant information retrieved from the user's personal vault:
-    --------------------------------------------------
-    ${vaultContext || "No directly relevant items found in the vault."}
-    --------------------------------------------------
+USER CURRENT QUERY: "${message}"
 
-    INSTRUCTIONS:
-    1. PRIORITIZE the Vault Context above. If the answer is in the context, base your response heavily on it.
-    2. CITATIONS: If you use information from a [Source], reference it (e.g., "According to your note on 'React Hooks'...").
-    3. FALLBACK: If the vault context is empty or irrelevant to the question, explicitly say: "I couldn't find anything specific in your vault about this, but here is some general information:" and then provide a standard AI answer.
-    `
+=== RETRIEVED VAULT CONTEXT ===
+${vaultContext || "NO RELEVANT VAULT ITEMS FOUND."}
+===============================
+
+### RESPONSE GUIDELINES:
+
+1. **Synthesize, Don't Just Quote:** - Instead of saying "Note 1 says X, Note 2 says Y," combine the information into a coherent answer. 
+   - If sources conflict, point out the discrepancy.
+
+2. **Strict Citation Style:** - Every time you state a fact from the vault, strictly reference the source title/link immediately after. 
+   - Format: "React hooks allow state management [Source: 'React Docs'](link_if_available)."
+
+3. **Handling Gaps (The Fallback):**
+   - **Scenario A (Context Found):** Answer using *only* the vault info. Do not add outside knowledge unless it is necessary to explain a concept found in the notes.
+   - **Scenario B (No Context):** If the "Retrieved Vault Context" is empty or irrelevant, you **MUST** start your reply with: *"I couldn't find anything in your LinkVault about that, but generally speaking..."* and then provide a helpful AI response.
+
+4. **Formatting:**
+   - Use **Markdown** (headers, bolding, bullet points) to make the response easy to scan.
+   - If the user asks for a list, summary, or code, format it accordingly.
+
+5. **Tone:** Helpful, concise, and objective. You are an assistant, not a chatbot friend.
+`
 
     // 5. Fetch Chat History (for conversation continuity)
     const { data: history } = await supabase
