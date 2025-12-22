@@ -7,13 +7,11 @@ import { getYouTubeVideoId, getYouTubeVideoDetails, getYouTubeTranscript } from 
 import { generateContentWithFallback, embedContentWithFallback } from '@/lib/gemini'
 import * as mammoth from 'mammoth';
 
-// --- FIX: Polyfill DOMMatrix for Vercel/Node environment ---
-// pdf-parse relies on an old version of pdf.js that expects DOMMatrix to exist.
+// Polyfill DOMMatrix for Vercel/Node environment
 if (typeof global.DOMMatrix === 'undefined') {
   // @ts-ignore
   global.DOMMatrix = class {
     constructor() { return this; }
-    // Add dummy methods if needed, but usually just existing is enough
     toString() { return '[object DOMMatrix]'; }
   };
 }
@@ -46,6 +44,7 @@ export async function POST(req: NextRequest) {
     let originalContent: string | null = null;
     let contentForAI: any[] = [];
     let storagePath: string | null = null;
+    let processedType = contentType; // Allow changing type (e.g. tweet -> link if needed)
     
     let finalPrompt = `
       Analyze the following content. Perform these actions:
@@ -73,14 +72,12 @@ export async function POST(req: NextRequest) {
         const file = formData.get('file') as File;
         if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 });
         
-        // 1. Upload Original File
         const filePath = `${user.id}/docs/${Date.now()}-${file.name}`;
         const { data: uploadData, error: uploadError } = await supabase.storage.from('vault.images').upload(filePath, file);
         if (uploadError) throw new Error(`Storage Error: ${uploadError.message}`);
         storagePath = uploadData.path;
         originalContent = file.name;
 
-        // 2. Extract Text based on type
         const buffer = Buffer.from(await file.arrayBuffer());
         let extractedText = "";
 
@@ -91,13 +88,36 @@ export async function POST(req: NextRequest) {
             const result = await mammoth.extractRawText({ buffer: buffer });
             extractedText = result.value;
         } else {
-            // Assume text/markdown
             extractedText = buffer.toString('utf-8');
         }
 
-        // 3. Feed to Gemini
         finalPrompt += `Document Title: "${file.name}"\n\nDocument Text:\n${extractedText.substring(0, 20000)}`;
         contentForAI = [{ text: finalPrompt }];
+    }
+    // TWEET HANDLER
+    else if (contentType === 'tweet') {
+        const url = formData.get('content') as string;
+        originalContent = url;
+        
+        // Convert x.com to twitter.com for oEmbed compatibility
+        let oembedUrl = url.replace('x.com', 'twitter.com');
+        const apiUrl = `https://publish.twitter.com/oembed?url=${encodeURIComponent(oembedUrl)}&omit_script=true`;
+        
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error("Could not fetch Tweet info. Is the account public?");
+        
+        const data = await response.json();
+        
+        // Twitter returns HTML (blockquote). We strip tags to get raw text.
+        const $ = cheerio.load(data.html);
+        const tweetText = $('p').text() || $('blockquote').text();
+        const authorName = data.author_name;
+        
+        finalPrompt += `Tweet by ${authorName}:\n"${tweetText}"\n\nURL: ${url}`;
+        contentForAI = [{ text: finalPrompt }];
+        
+        // You can save as 'tweet' or map to 'link' if you don't want to update VaultGrid icons yet
+        processedType = 'tweet'; 
     }
     else {
         const content = formData.get('content') as string;
@@ -146,7 +166,7 @@ export async function POST(req: NextRequest) {
 
     const { data: newItem, error: dbError } = await supabase.from('vault_items').insert({ 
         user_id: user.id, 
-        content_type: contentType, 
+        content_type: processedType, 
         original_content: originalContent, 
         storage_path: storagePath, 
         processed_title: aiJson.title, 

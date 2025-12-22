@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Plus, Link as LinkIcon, FileText, Image as ImageIcon, Video, LoaderCircle, FileUp } from 'lucide-react'
+import { Plus, Link as LinkIcon, FileText, Image as ImageIcon, Video, LoaderCircle, FileUp, Twitter } from 'lucide-react'
 
 export function CreateItemDialog() {
   const [isOpen, setIsOpen] = useState(false)
@@ -32,15 +32,24 @@ export function CreateItemDialog() {
         body: formData,
       })
 
-      const result = await response.json()
+      // Check if response is okay BEFORE trying to parse JSON
       if (!response.ok) {
-        throw new Error(result.error || 'An unknown error occurred.')
+        const text = await response.text();
+        try {
+            const json = JSON.parse(text);
+            throw new Error(json.error || `Server Error: ${response.status}`);
+        } catch (e) {
+            throw new Error(text || `Server Error: ${response.status} ${response.statusText}`);
+        }
       }
+
+      await response.json() // Consume the success JSON
       
       setIsOpen(false)
       router.refresh() 
 
     } catch (error: unknown) {
+      console.error("Upload Error:", error);
       if (error instanceof Error) {
         setMessage({type: 'error', text: error.message})
       } else {
@@ -72,15 +81,16 @@ export function CreateItemDialog() {
           <DialogTitle className="text-xl font-bold">Add to Vault</DialogTitle>
         </DialogHeader>
         
-        {/* FIX: Changed grid-cols-4 to grid-cols-5 to fit the new Document tab */}
+        {/* Updated grid cols to 6 to fit Twitter */}
         <Tabs defaultValue="link" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 bg-stone-100 p-1">
+          <TabsList className="grid w-full grid-cols-6 bg-stone-100 p-1">
             <TabsTrigger value="link" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer" title="Link"><LinkIcon className="h-4 w-4" /></TabsTrigger>
             <TabsTrigger value="note" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer" title="Note"><FileText className="h-4 w-4" /></TabsTrigger>
             <TabsTrigger value="image" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer" title="Image"><ImageIcon className="h-4 w-4" /></TabsTrigger>
             <TabsTrigger value="video" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer" title="Video"><Video className="h-4 w-4" /></TabsTrigger>
-            {/* NEW TAB */}
             <TabsTrigger value="document" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer" title="Document"><FileUp className="h-4 w-4" /></TabsTrigger>
+            {/* NEW TWITTER TAB */}
+            <TabsTrigger value="tweet" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer" title="X / Tweet"><Twitter className="h-4 w-4" /></TabsTrigger>
           </TabsList>
 
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
@@ -120,7 +130,6 @@ export function CreateItemDialog() {
                 </div>
             </TabsContent>
 
-            {/* NEW CONTENT FOR DOCUMENT */}
             <TabsContent value="document" className="space-y-4 mt-0">
                 <div className="space-y-2">
                     <Label>Upload Document</Label>
@@ -132,6 +141,21 @@ export function CreateItemDialog() {
                         required={activeTab === 'document'} 
                     />
                     <p className="text-xs text-stone-500">Supported: PDF, Word, Text, Markdown.</p>
+                </div>
+            </TabsContent>
+
+            {/* NEW CONTENT FOR TWEET */}
+            <TabsContent value="tweet" className="space-y-4 mt-0">
+                <div className="space-y-2">
+                    <Label>Tweet URL</Label>
+                    <Input 
+                        name="content" 
+                        type="url" 
+                        placeholder="https://x.com/username/status/..." 
+                        required={activeTab === 'tweet'} 
+                        className="bg-stone-50" 
+                    />
+                    <p className="text-xs text-stone-500">We will extract the tweet text and details.</p>
                 </div>
             </TabsContent>
 
