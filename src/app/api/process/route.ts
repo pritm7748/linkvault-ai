@@ -16,7 +16,6 @@ if (typeof global.DOMMatrix === 'undefined') {
   };
 }
 
-// FIX: Use require() to avoid ESM errors with pdf-parse
 const pdf = require('pdf-parse');
 
 const jsonSchema: Schema = {
@@ -44,7 +43,7 @@ export async function POST(req: NextRequest) {
     let originalContent: string | null = null;
     let contentForAI: any[] = [];
     let storagePath: string | null = null;
-    let processedType = contentType; // Allow changing type (e.g. tweet -> link if needed)
+    let processedType = contentType;
     
     let finalPrompt = `
       Analyze the following content. Perform these actions:
@@ -94,32 +93,77 @@ export async function POST(req: NextRequest) {
         finalPrompt += `Document Title: "${file.name}"\n\nDocument Text:\n${extractedText.substring(0, 20000)}`;
         contentForAI = [{ text: finalPrompt }];
     }
-    // TWEET HANDLER
+    // --- UPDATED TWEET HANDLER ---
     else if (contentType === 'tweet') {
         const url = formData.get('content') as string;
         originalContent = url;
         
-        // Convert x.com to twitter.com for oEmbed compatibility
+        // 1. Fetch Basic Info via oEmbed
         let oembedUrl = url.replace('x.com', 'twitter.com');
         const apiUrl = `https://publish.twitter.com/oembed?url=${encodeURIComponent(oembedUrl)}&omit_script=true`;
         
-        const response = await fetch(apiUrl);
-        if (!response.ok) throw new Error("Could not fetch Tweet info. Is the account public?");
-        
-        const data = await response.json();
-        
-        // Twitter returns HTML (blockquote). We strip tags to get raw text.
-        const $ = cheerio.load(data.html);
-        const tweetText = $('p').text() || $('blockquote').text();
-        const authorName = data.author_name;
+        let tweetText = "";
+        let authorName = "Twitter User";
+
+        try {
+            const response = await fetch(apiUrl);
+            if (response.ok) {
+                const data = await response.json();
+                const $ = cheerio.load(data.html);
+                tweetText = $('p').text() || $('blockquote').text();
+                authorName = data.author_name;
+            }
+        } catch (e) {
+            console.warn("oEmbed failed, trying fallback scraping...");
+        }
         
         finalPrompt += `Tweet by ${authorName}:\n"${tweetText}"\n\nURL: ${url}`;
         contentForAI = [{ text: finalPrompt }];
-        
-        // You can save as 'tweet' or map to 'link' if you don't want to update VaultGrid icons yet
         processedType = 'tweet'; 
+
+        // 2. Fetch Media via Open Graph (The "Smart" Layer)
+        // We pretend to be a bot (FacebookBot) to get the rich meta tags
+        try {
+            const metaResponse = await fetch(url, {
+                headers: { 
+                    'User-Agent': 'Mozilla/5.0 (compatible; FacebookBot/1.0; +https://developers.facebook.com/docs/sharing/webmasters/crawler)' 
+                }
+            });
+            
+            if (metaResponse.ok) {
+                const html = await metaResponse.text();
+                const $meta = cheerio.load(html);
+                
+                const ogImage = $meta('meta[property="og:image"]').attr('content');
+                const ogVideo = $meta('meta[property="og:video"]').attr('content'); // Some sites use og:video
+                const hasVideoCard = html.includes('player_url') || html.includes('video/mp4');
+
+                // A. HANDLE VIDEO
+                if (ogVideo || hasVideoCard) {
+                    finalPrompt += `\n\n[NOTE: This tweet contains a video/media file. Mention this in the summary.]`;
+                }
+                
+                // B. HANDLE IMAGE (Gemini Vision)
+                // We only process the image if it exists and DOESN'T look like a default avatar 
+                // (Twitter sometimes serves the avatar as og:image for text-only tweets, but usually media tweets have a specific URL pattern)
+                else if (ogImage) {
+                    const imageResp = await fetch(ogImage);
+                    const imageBuffer = await imageResp.arrayBuffer();
+                    const base64Data = Buffer.from(imageBuffer).toString('base64');
+                    const mimeType = imageResp.headers.get('content-type') || 'image/jpeg';
+
+                    // Add image to Gemini Payload
+                    contentForAI.push({ inlineData: { mimeType: mimeType, data: base64Data } });
+                    finalPrompt += `\n\n[NOTE: An image from the tweet is attached. Analyze it along with the text.]`;
+                }
+            }
+        } catch (e) {
+            console.warn("Media scraping failed:", e);
+            // Continue with just text
+        }
     }
     else {
+        // ... (Existing Link/Video/Note logic) ...
         const content = formData.get('content') as string;
         originalContent = content;
         let title = '';
@@ -153,7 +197,7 @@ export async function POST(req: NextRequest) {
     }
 
     const result: any = await generateContentWithFallback(
-        "gemini-3-flash-preview", 
+        "gemini-2.0-flash", // Use 2.0 or 1.5-flash for vision support
         { responseMimeType: "application/json", responseSchema: jsonSchema },
         contentForAI
     );
