@@ -27,7 +27,7 @@ type ItemDetailsDialogProps = {
   isOpen: boolean;
   onClose: () => void;
   onUpdate: (updatedItem: VaultItemFull) => void;
-  readOnly?: boolean; // NEW PROP
+  readOnly?: boolean;
 };
 
 export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate, readOnly = false }: ItemDetailsDialogProps) {
@@ -52,9 +52,6 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate, readOnly 
         setImageUrl(null)
 
         try {
-          // If readOnly (public), we might need a different API route that doesn't check auth, 
-          // OR we assume the user viewing this has permission (handled by RLS or public route).
-          // For now, we assume standard fetch works if RLS allows public read.
           const response = await fetch(`/api/vault/${itemId}`)
           if (!response.ok) throw new Error('Failed to fetch item details.')
           const data: VaultItemFull = await response.json()
@@ -90,7 +87,7 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate, readOnly 
   }, [itemId, isOpen])
 
   const handleSaveChanges = async () => {
-    if (!item || readOnly) return; // Guard
+    if (!item || readOnly) return;
     setIsLoading(true)
     setError(null)
     try {
@@ -201,9 +198,10 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate, readOnly 
                         {item.original_content}
                     </div>
                     
-                    {(item.content_type === 'link' || item.content_type === 'video') && (
+                    {/* FIX: Link for Tweet, Video, Link */}
+                    {(item.content_type === 'link' || item.content_type === 'video' || item.content_type === 'tweet') && (
                     <a href={item.original_content || '#'} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm inline-flex items-center gap-1 mt-1">
-                        Visit Link <ExternalLink className="h-3 w-3" />
+                        {item.content_type === 'tweet' ? "Visit Tweet" : "Visit Link"} <ExternalLink className="h-3 w-3" />
                     </a>
                     )}
 
@@ -218,7 +216,6 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate, readOnly 
             )}
         </div>
 
-        {/* FOOTER - HIDDEN IF READONLY */}
         {item && !isLoading && !readOnly && (
             <DialogFooter className="p-4 border-t bg-white flex-none">
             {isEditing ? (
