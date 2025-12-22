@@ -197,7 +197,7 @@ export async function POST(req: NextRequest) {
     }
 
     const result: any = await generateContentWithFallback(
-        "gemini-2.0-flash", // Use 2.0 or 1.5-flash for vision support
+        "gemini-3-flash-preview", // Use 2.0 or 1.5-flash for vision support
         { responseMimeType: "application/json", responseSchema: jsonSchema },
         contentForAI
     );
