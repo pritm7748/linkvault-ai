@@ -198,10 +198,10 @@ export function ItemDetailsDialog({ itemId, isOpen, onClose, onUpdate, readOnly 
                         {item.original_content}
                     </div>
                     
-                    {/* FIX: Link for Tweet, Video, Link */}
-                    {(item.content_type === 'link' || item.content_type === 'video' || item.content_type === 'tweet') && (
+                    {/* FIX: Link for Tweet, Video, Link, and Instagram */}
+                    {(item.content_type === 'link' || item.content_type === 'video' || item.content_type === 'tweet' || item.content_type === 'instagram') && (
                     <a href={item.original_content || '#'} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm inline-flex items-center gap-1 mt-1">
-                        {item.content_type === 'tweet' ? "Visit Tweet" : "Visit Link"} <ExternalLink className="h-3 w-3" />
+                        {item.content_type === 'tweet' ? "Visit Tweet" : item.content_type === 'instagram' ? "Visit Post" : "Visit Link"} <ExternalLink className="h-3 w-3" />
                     </a>
                     )}
 
