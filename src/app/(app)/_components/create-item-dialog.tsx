@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Plus, Link as LinkIcon, FileText, Image as ImageIcon, Video, LoaderCircle, FileUp, Twitter } from 'lucide-react'
+import { Plus, Link as LinkIcon, FileText, Image as ImageIcon, Video, LoaderCircle, FileUp, Twitter, Instagram } from 'lucide-react'
 
 export function CreateItemDialog() {
   const [isOpen, setIsOpen] = useState(false)
@@ -32,7 +32,6 @@ export function CreateItemDialog() {
         body: formData,
       })
 
-      // Check if response is okay BEFORE trying to parse JSON
       if (!response.ok) {
         const text = await response.text();
         try {
@@ -43,7 +42,7 @@ export function CreateItemDialog() {
         }
       }
 
-      await response.json() // Consume the success JSON
+      await response.json()
       
       setIsOpen(false)
       router.refresh() 
@@ -76,21 +75,22 @@ export function CreateItemDialog() {
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="sm:max-w-[600px] w-[95vw] bg-white text-stone-900 overflow-hidden">
+      <DialogContent className="sm:max-w-[650px] w-[95vw] bg-white text-stone-900 overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Add to Vault</DialogTitle>
         </DialogHeader>
         
-        {/* Updated grid cols to 6 to fit Twitter */}
+        {/* Updated grid cols to 7 to fit Instagram */}
         <Tabs defaultValue="link" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6 bg-stone-100 p-1">
+          <TabsList className="grid w-full grid-cols-7 bg-stone-100 p-1 overflow-x-auto">
             <TabsTrigger value="link" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer" title="Link"><LinkIcon className="h-4 w-4" /></TabsTrigger>
             <TabsTrigger value="note" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer" title="Note"><FileText className="h-4 w-4" /></TabsTrigger>
             <TabsTrigger value="image" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer" title="Image"><ImageIcon className="h-4 w-4" /></TabsTrigger>
             <TabsTrigger value="video" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer" title="Video"><Video className="h-4 w-4" /></TabsTrigger>
             <TabsTrigger value="document" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer" title="Document"><FileUp className="h-4 w-4" /></TabsTrigger>
-            {/* NEW TWITTER TAB */}
             <TabsTrigger value="tweet" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer" title="X / Tweet"><Twitter className="h-4 w-4" /></TabsTrigger>
+            {/* NEW INSTAGRAM TAB */}
+            <TabsTrigger value="instagram" className="data-[state=active]:bg-white data-[state=active]:shadow-sm cursor-pointer" title="Instagram"><Instagram className="h-4 w-4" /></TabsTrigger>
           </TabsList>
 
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
@@ -144,7 +144,6 @@ export function CreateItemDialog() {
                 </div>
             </TabsContent>
 
-            {/* NEW CONTENT FOR TWEET */}
             <TabsContent value="tweet" className="space-y-4 mt-0">
                 <div className="space-y-2">
                     <Label>Tweet URL</Label>
@@ -155,7 +154,22 @@ export function CreateItemDialog() {
                         required={activeTab === 'tweet'} 
                         className="bg-stone-50" 
                     />
-                    <p className="text-xs text-stone-500">We will extract the tweet text and details.</p>
+                    <p className="text-xs text-stone-500">We will extract the tweet text and media.</p>
+                </div>
+            </TabsContent>
+
+            {/* NEW INSTAGRAM INPUT */}
+            <TabsContent value="instagram" className="space-y-4 mt-0">
+                <div className="space-y-2">
+                    <Label>Instagram Post/Reel URL</Label>
+                    <Input 
+                        name="content" 
+                        type="url" 
+                        placeholder="https://www.instagram.com/p/..." 
+                        required={activeTab === 'instagram'} 
+                        className="bg-stone-50" 
+                    />
+                    <p className="text-xs text-stone-500">We will capture the thumbnail and caption.</p>
                 </div>
             </TabsContent>
 

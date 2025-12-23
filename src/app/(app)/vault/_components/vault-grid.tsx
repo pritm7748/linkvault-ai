@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { MoreHorizontal, Trash2, Edit, FolderInput, Star, LogOut, Video, Link2, FileText, Image as ImageIcon, X as XIcon, File, Twitter } from 'lucide-react'
+import { MoreHorizontal, Trash2, Edit, FolderInput, Star, LogOut, Video, Link2, FileText, Image as ImageIcon, X as XIcon, File, Twitter, Instagram } from 'lucide-react'
 import { ItemDetailsDialog } from './item-details-dialog'
 import { MoveToCollectionDialog } from './move-to-collection-dialog'
 
@@ -42,20 +42,16 @@ export function VaultGrid({
 
   const [isDeleting, setIsDeleting] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<number | null>(null)
-  
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
-  
   const [itemToMove, setItemToMove] = useState<number | null>(null)
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false)
-
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
 
   const router = useRouter();
   const pathname = usePathname();
   const isInCollectionView = pathname.includes('/collections/');
 
-  // FIX: Added 'tweet' style (Sky Blue)
   const getTypeStyles = (type: string) => {
     switch (type) {
         case 'video': return { color: 'border-t-red-500', icon: <Video className="h-3 w-3 text-red-500" /> };
@@ -63,6 +59,8 @@ export function VaultGrid({
         case 'image': return { color: 'border-t-purple-500', icon: <ImageIcon className="h-3 w-3 text-purple-500" /> };
         case 'document': return { color: 'border-t-emerald-500', icon: <File className="h-3 w-3 text-emerald-500" /> };
         case 'tweet': return { color: 'border-t-sky-500', icon: <Twitter className="h-3 w-3 text-sky-500" /> };
+        // FIX: Added Instagram style
+        case 'instagram': return { color: 'border-t-pink-500', icon: <Instagram className="h-3 w-3 text-pink-500" /> };
         default: return { color: 'border-t-amber-500', icon: <FileText className="h-3 w-3 text-amber-500" /> };
     }
   }
@@ -190,25 +188,16 @@ export function VaultGrid({
   return (
     <>
       {!readOnly && selectedItems.length > 0 && (
-        <div 
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 md:left-[calc(50%+110px)] lg:left-[calc(50%+140px)] z-50 
-            bg-white text-stone-900 border border-stone-200 rounded-full shadow-2xl p-2 px-6 
-            flex items-center gap-4 animate-in slide-in-from-bottom-4"
-        >
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 md:left-[calc(50%+110px)] lg:left-[calc(50%+140px)] z-50 bg-white text-stone-900 border border-stone-200 rounded-full shadow-2xl p-2 px-6 flex items-center gap-4 animate-in slide-in-from-bottom-4">
           <p className="text-sm font-semibold">{selectedItems.length} selected</p>
           <div className="h-4 w-px bg-stone-200" />
-          
           <Button variant="ghost" size="sm" onClick={() => handleOpenMoveDialog(null)} className="h-8 text-stone-600 hover:text-stone-900 hover:bg-stone-100">Move</Button>
-
           {isInCollectionView ? (
             <Button variant="ghost" size="sm" onClick={handleBulkRemoveFromCollection} className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50">Remove</Button>
           ) : (
             <Button variant="ghost" size="sm" onClick={() => setItemToDelete(1)} className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50">Delete</Button>
           )}
-
-          <Button variant="ghost" size="sm" onClick={() => setSelectedItems([])} className="h-8 w-8 p-0 rounded-full hover:bg-stone-100 cursor-pointer">
-            <XIcon className="h-4 w-4 text-stone-400 hover:text-stone-900" />
-          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedItems([])} className="h-8 w-8 p-0 rounded-full hover:bg-stone-100 cursor-pointer"><XIcon className="h-4 w-4 text-stone-400 hover:text-stone-900" /></Button>
         </div>
       )}
 

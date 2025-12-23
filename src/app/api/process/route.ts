@@ -7,7 +7,6 @@ import { getYouTubeVideoId, getYouTubeVideoDetails, getYouTubeTranscript } from 
 import { generateContentWithFallback, embedContentWithFallback } from '@/lib/gemini'
 import * as mammoth from 'mammoth';
 
-// Polyfill DOMMatrix for Vercel/Node environment
 if (typeof global.DOMMatrix === 'undefined') {
   // @ts-ignore
   global.DOMMatrix = class {
@@ -66,7 +65,6 @@ export async function POST(req: NextRequest) {
       contentForAI = [{ text: finalPrompt }, { inlineData: { mimeType: file.type, data: base64Data } }];
       originalContent = file.name;
     } 
-    // DOCUMENT HANDLER
     else if (contentType === 'document') {
         const file = formData.get('file') as File;
         if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -93,10 +91,11 @@ export async function POST(req: NextRequest) {
         finalPrompt += `Document Title: "${file.name}"\n\nDocument Text:\n${extractedText.substring(0, 20000)}`;
         contentForAI = [{ text: finalPrompt }];
     }
-    // --- UPDATED TWEET HANDLER ---
+    // TWEET HANDLER
     else if (contentType === 'tweet') {
         const url = formData.get('content') as string;
         originalContent = url;
+        processedType = 'tweet';
         
         // 1. Fetch Basic Info via oEmbed
         let oembedUrl = url.replace('x.com', 'twitter.com');
@@ -113,57 +112,76 @@ export async function POST(req: NextRequest) {
                 tweetText = $('p').text() || $('blockquote').text();
                 authorName = data.author_name;
             }
-        } catch (e) {
-            console.warn("oEmbed failed, trying fallback scraping...");
-        }
+        } catch (e) { console.warn("oEmbed failed"); }
         
         finalPrompt += `Tweet by ${authorName}:\n"${tweetText}"\n\nURL: ${url}`;
         contentForAI = [{ text: finalPrompt }];
-        processedType = 'tweet'; 
 
-        // 2. Fetch Media via Open Graph (The "Smart" Layer)
-        // We pretend to be a bot (FacebookBot) to get the rich meta tags
+        // 2. Fetch Media via Open Graph
         try {
             const metaResponse = await fetch(url, {
-                headers: { 
-                    'User-Agent': 'Mozilla/5.0 (compatible; FacebookBot/1.0; +https://developers.facebook.com/docs/sharing/webmasters/crawler)' 
-                }
+                headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FacebookBot/1.0)' }
             });
             
             if (metaResponse.ok) {
                 const html = await metaResponse.text();
                 const $meta = cheerio.load(html);
-                
                 const ogImage = $meta('meta[property="og:image"]').attr('content');
-                const ogVideo = $meta('meta[property="og:video"]').attr('content'); // Some sites use og:video
-                const hasVideoCard = html.includes('player_url') || html.includes('video/mp4');
-
-                // A. HANDLE VIDEO
-                if (ogVideo || hasVideoCard) {
-                    finalPrompt += `\n\n[NOTE: This tweet contains a video/media file. Mention this in the summary.]`;
-                }
                 
-                // B. HANDLE IMAGE (Gemini Vision)
-                // We only process the image if it exists and DOESN'T look like a default avatar 
-                // (Twitter sometimes serves the avatar as og:image for text-only tweets, but usually media tweets have a specific URL pattern)
-                else if (ogImage) {
+                if (ogImage) {
                     const imageResp = await fetch(ogImage);
                     const imageBuffer = await imageResp.arrayBuffer();
                     const base64Data = Buffer.from(imageBuffer).toString('base64');
-                    const mimeType = imageResp.headers.get('content-type') || 'image/jpeg';
-
-                    // Add image to Gemini Payload
-                    contentForAI.push({ inlineData: { mimeType: mimeType, data: base64Data } });
-                    finalPrompt += `\n\n[NOTE: An image from the tweet is attached. Analyze it along with the text.]`;
+                    contentForAI.push({ inlineData: { mimeType: 'image/jpeg', data: base64Data } });
+                    finalPrompt += `\n\n[NOTE: An image from the tweet is attached.]`;
                 }
             }
-        } catch (e) {
-            console.warn("Media scraping failed:", e);
-            // Continue with just text
+        } catch (e) { console.warn("Tweet media scraping failed:", e); }
+    }
+    // --- NEW INSTAGRAM HANDLER ---
+    else if (contentType === 'instagram') {
+        const url = formData.get('content') as string;
+        originalContent = url;
+        processedType = 'instagram'; // We will add a pink icon for this in VaultGrid
+
+        try {
+            // Spoof as Facebook External Hit to get Open Graph tags
+            const metaResponse = await fetch(url, {
+                headers: { 
+                    'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+                    'Accept-Language': 'en-US,en;q=0.9'
+                }
+            });
+
+            if (!metaResponse.ok) throw new Error("Could not fetch Instagram metadata.");
+
+            const html = await metaResponse.text();
+            const $ = cheerio.load(html);
+
+            const title = $('meta[property="og:title"]').attr('content') || "Instagram Post";
+            const description = $('meta[property="og:description"]').attr('content') || "";
+            const image = $('meta[property="og:image"]').attr('content');
+
+            finalPrompt += `Instagram Post: "${title}"\nCaption: "${description}"\nURL: ${url}`;
+            contentForAI = [{ text: finalPrompt }];
+
+            // If we found an image/thumbnail, feed it to Gemini Vision
+            if (image) {
+                const imageResp = await fetch(image);
+                const imageBuffer = await imageResp.arrayBuffer();
+                const base64Data = Buffer.from(imageBuffer).toString('base64');
+                contentForAI.push({ inlineData: { mimeType: 'image/jpeg', data: base64Data } });
+                finalPrompt += `\n\n[NOTE: Attached is the post cover/image. Analyze it.]`;
+            }
+
+        } catch (e: any) {
+            console.warn("Instagram scraping failed:", e);
+            // Fallback: Just ask AI to summarize based on URL (it might hallucinate or refuse, but safer than crashing)
+            finalPrompt += `Instagram URL: ${url}\n(Could not scrape metadata. Please generate a placeholder summary based on the link structure.)`;
+            contentForAI = [{ text: finalPrompt }];
         }
     }
     else {
-        // ... (Existing Link/Video/Note logic) ...
         const content = formData.get('content') as string;
         originalContent = content;
         let title = '';
@@ -197,7 +215,7 @@ export async function POST(req: NextRequest) {
     }
 
     const result: any = await generateContentWithFallback(
-        "gemini-3-flash-preview", // Use 2.0 or 1.5-flash for vision support
+        "gemini-2.0-flash", 
         { responseMimeType: "application/json", responseSchema: jsonSchema },
         contentForAI
     );
