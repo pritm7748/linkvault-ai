@@ -52,21 +52,30 @@ export async function generateContentWithFallback(
 }
 
 // 3. Helper: Embed Content with Failover
-export async function embedContentWithFallback(
-  text: string
-) {
+export async function embedContentWithFallback(text: string) {
   let lastError: any = null;
 
   for (let i = 0; i < keys.length; i++) {
     try {
       const genAI = new GoogleGenerativeAI(keys[i]);
-      const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-005" });
       
-      const result = await embeddingModel.embedContent(text);
+      // Use the older model as requested
+      const embeddingModel = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
+      
+      // FIX: Cast to 'any' to bypass TS check for outputDimensionality
+      // FIX: Add 'role' to content object
+      const result = await embeddingModel.embedContent({
+        content: { 
+          role: 'user', 
+          parts: [{ text }] 
+        },
+        outputDimensionality: 768
+      } as any);
+      
       return result;
 
     } catch (error: any) {
-      console.warn(`Gemini Embedding Key ${i + 1} failed. Switching...`);
+      console.warn(`Gemini Embedding Key ${i + 1} failed. Switching...`, error.message);
       lastError = error;
     }
   }
