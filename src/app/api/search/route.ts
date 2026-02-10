@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 })
     }
 
-    const embeddingModel = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
+    const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-005" });
     const embeddingResult = await embeddingModel.embedContent(query);
     const queryEmbedding = embeddingResult.embedding.values;
 
