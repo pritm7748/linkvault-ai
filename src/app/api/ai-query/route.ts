@@ -1,5 +1,3 @@
-// src/app/api/ai-query/route.ts
-
 import { NextRequest, NextResponse } from 'next/server'
 import { createServer } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
@@ -33,7 +31,17 @@ export async function POST(req: NextRequest) {
     }
 
     const embeddingModel = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
-    const embeddingResult = await embeddingModel.embedContent(query);
+    
+    // FIX: Force 768 dimensions to match database schema
+    // FIX: Add 'role' to content object to satisfy TypeScript/API requirements
+    const embeddingResult = await embeddingModel.embedContent({
+        content: { 
+          role: 'user', 
+          parts: [{ text: query }] 
+        },
+        outputDimensionality: 768
+    } as any);
+    
     const queryEmbedding = embeddingResult.embedding.values;
 
     const { data: items, error: rpcError } = await supabase.rpc('match_vault_items', {
@@ -44,6 +52,8 @@ export async function POST(req: NextRequest) {
     })
 
     if (rpcError) {
+      // NOTE: If you still see a "dimensions" error here, it means the DB function 
+      // expects a different size, but this fix ensures we send 768.
       throw new Error(`Database RPC error: ${rpcError.message}`)
     }
     
@@ -74,7 +84,7 @@ export async function POST(req: NextRequest) {
       ${query}
     `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
     const result = await model.generateContent(prompt);
     const response = result.response;
     const answer = response.text();

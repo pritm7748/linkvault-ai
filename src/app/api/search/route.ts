@@ -14,13 +14,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { query } = await req.json()
+    const json = await req.json()
+    const query = json.query
+    
     if (!query) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 })
     }
 
     const embeddingModel = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
-    const embeddingResult = await embeddingModel.embedContent(query);
+    
+    // FIX: Force 768 dimensions to match database schema
+    const embeddingResult = await embeddingModel.embedContent({
+      content: { 
+        role: 'user', 
+        parts: [{ text: query }] 
+      },
+      outputDimensionality: 768
+    } as any);
+    
     const queryEmbedding = embeddingResult.embedding.values;
 
     const { data: items, error } = await supabase.rpc('match_vault_items', {

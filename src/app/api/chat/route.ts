@@ -38,7 +38,15 @@ export async function POST(req: NextRequest) {
     // --- STEP 3: PERFORM VECTOR SEARCH (The "RAG" Magic) ---
     
     // A. Generate embedding for the user's question
-    const embeddingResult = await embeddingModel.embedContent(message)
+    // FIX: Force 768 dimensions to match database schema
+    const embeddingResult = await embeddingModel.embedContent({
+        content: { 
+          role: 'user', 
+          parts: [{ text: message }] 
+        },
+        outputDimensionality: 768
+    } as any);
+    
     const embedding = embeddingResult.embedding.values
 
     // B. Search Supabase for relevant vault items
@@ -106,9 +114,9 @@ ${vaultContext || "NO RELEVANT VAULT ITEMS FOUND."}
         }))
 
     // 6. Generate Response
+    // Note: Creating a chat session with history, but sending the RAG prompt as the new message
     const chatSession = chatModel.startChat({ history: validHistory })
     
-    // Note: We send the *Enriched RAG Prompt* instead of just the raw message
     const result = await chatSession.sendMessage(ragPrompt)
     const aiResponseText = result.response.text()
 
