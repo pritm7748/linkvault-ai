@@ -93,7 +93,7 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
                 <Textarea ref={textareaRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder="Ask a question..." className="min-h-[44px] max-h-[150px] w-full resize-none border-0 shadow-none focus-visible:ring-0 py-2.5 px-0 text-base bg-transparent text-stone-900 placeholder:text-stone-500" rows={1} />
                 <Button onClick={() => handleSubmit()} disabled={!input.trim() || isLoading} size="icon" className="mb-0.5 shrink-0 bg-stone-900 hover:bg-stone-700 rounded-full h-9 w-9 transition-transform active:scale-95 cursor-pointer"><SendHorizontal className="h-4 w-4 text-white" /></Button>
             </div>
-            <p className="text-center text-[10px] text-stone-400 mt-2 font-medium">Gemini can make mistakes. Check important info.</p>
+            <p className="text-center text-[10px] text-stone-400 mt-2 font-medium">AI can make mistakes. Check important info.</p>
         </div>
       </div>
     </div>
