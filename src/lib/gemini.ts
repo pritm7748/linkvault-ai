@@ -60,7 +60,7 @@ export async function embedContentWithFallback(
   for (let i = 0; i < keys.length; i++) {
     try {
       const genAI = new GoogleGenerativeAI(keys[i]);
-      const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
+      const embeddingModel = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
       
       const result = await embeddingModel.embedContent(text);
       return result;

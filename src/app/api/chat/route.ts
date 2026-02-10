@@ -7,7 +7,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
 
 // We need two models: one for chat, one for vector embeddings
 const chatModel = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' })
-const embeddingModel = genAI.getGenerativeModel({ model: 'text-embedding-004' })
+const embeddingModel = genAI.getGenerativeModel({ model: 'gemini-embedding-001' })
 
 export async function POST(req: NextRequest) {
   try {
