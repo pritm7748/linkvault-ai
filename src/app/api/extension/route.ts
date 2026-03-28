@@ -52,8 +52,10 @@ export async function POST(req: Request) {
       3. Write a detailed, paragraph-long summary. You MUST incorporate key insights, specific names, or technical terms mentioned in the text to optimize for searchability.
     `;
 
-    // 1. YouTube Handling
-    if (type === 'link') {
+    // --- FIX: Group all the web-based types together ---
+    const webTypes = ['link', 'article', 'twitter', 'youtube', 'instagram'];
+
+    if (webTypes.includes(type)) {
         const videoId = getYouTubeVideoId(content);
         if (videoId) {
             processedType = 'video';
@@ -67,9 +69,9 @@ export async function POST(req: Request) {
             finalPrompt += `\n\nYouTube Video: "${details.title}"\nContent: "${bodyText.substring(0, 15000)}"`;
             contentParts = [{ text: finalPrompt }];
         } else {
-            // 2. Web Page Handling (Deep DOM Extraction)
+            // It's an Article, Tweet, or Instagram post
             const textToAnalyze = pageText || `Link URL: ${content} - Title: ${title}`;
-            finalPrompt += `\n\nTitle: "${title}"\nURL: "${content}"\nPage Content: "${textToAnalyze.substring(0, 15000)}"`;
+            finalPrompt += `\n\nPlatform: ${type.toUpperCase()}\nTitle: "${title}"\nURL: "${content}"\nPage Content: "${textToAnalyze.substring(0, 15000)}"`;
             contentParts = [{ text: finalPrompt }];
         }
     } 
@@ -97,8 +99,9 @@ export async function POST(req: Request) {
     }
 
     // --- AI GENERATION ---
+    // (Ensure you pass contentParts correctly to your fallback function)
     const result: any = await generateContentWithFallback(
-        "gemini-3-flash",  // Using the updated model name
+        "gemini-1.5-flash",  // Switched to stable 1.5 for maximum reliability
         { responseMimeType: "application/json", responseSchema: jsonSchema },
         contentParts
     );
