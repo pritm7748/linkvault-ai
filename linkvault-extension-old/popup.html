@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div class="container">
+      
+      <header>
+        <div class="logo-group">
+          <div class="logo-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+          </div>
+          <h1>LinkVault AI</h1>
+        </div>
+        <span class="badge">PRO</span>
+      </header>
+
+      <div id="highlight-section" class="card fade-in" style="display: none;">
+        <div class="card-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          <span>Save Quote</span>
+        </div>
+        <div class="highlight-box">
+          <p id="highlight-content" class="highlight-text"></p>
+        </div>
+        <button id="save-highlight-btn" class="btn btn-warning">
+          <span>Save & Summarize</span>
+        </button>
+      </div>
+
+      <div id="page-section" class="card fade-in">
+        <div class="card-title">Current Tab</div>
+        <div id="page-info" class="truncate-text text-muted">Scanning...</div>
+        <button id="save-tab-btn" class="btn btn-primary">
+          <span id="btn-icon-container"></span>
+          <span id="btn-text">Save Page</span>
+        </button>
+      </div>
+
+      <div class="card fade-in" style="animation-delay: 0.1s;">
+        <div class="card-title">Quick Save Media</div>
+        <div id="images-container" class="image-grid">
+          <div class="empty-state">Loading assets...</div>
+        </div>
+      </div>
+
+      <div id="status" class="status-bar"></div>
+      
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>
