@@ -1,5 +1,5 @@
 // popup.js
-const API_URL = "http://localhost:3000/api/extension"; // Change to your Vercel URL in production
+const API_URL = "http://linkvault-ai.vercel.app/api/extension"; // Change to your Vercel URL in production
 
 document.addEventListener('DOMContentLoaded', async () => {
   const statusDiv = document.getElementById('status');
