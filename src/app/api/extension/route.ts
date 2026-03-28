@@ -101,7 +101,7 @@ export async function POST(req: Request) {
     // --- AI GENERATION ---
     // (Ensure you pass contentParts correctly to your fallback function)
     const result: any = await generateContentWithFallback(
-        "gemini-1.5-flash",  // Switched to stable 1.5 for maximum reliability
+        "gemini-3-flash-preview",  // Switched to stable 1.5 for maximum reliability
         { responseMimeType: "application/json", responseSchema: jsonSchema },
         contentParts
     );
