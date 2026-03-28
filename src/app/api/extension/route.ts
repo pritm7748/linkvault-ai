@@ -108,12 +108,22 @@ export async function POST(req: Request) {
     const aiJson = JSON.parse(result.response.text());
 
     // --- VECTORIZATION ---
-    // (This relies on the embedContentWithFallback utility we fixed earlier to output 768 dimensions!)
     const textForEmbedding = `Title: ${aiJson.title}\nSummary: ${aiJson.summary}`;
-    const embeddingResult = await embedContentWithFallback(textForEmbedding);
     
-    // Extract the embedding array from the response
-    const embedding = embeddingResult.embedding;
+    // 1. Cast the result to 'any' to bypass strict TypeScript shape checking
+    const embeddingResult: any = await embedContentWithFallback(textForEmbedding);
+    
+    // 2. Safely extract the array using optional chaining
+    let embeddingArray = [];
+    if (embeddingResult?.embedding?.values) {
+        embeddingArray = embeddingResult.embedding.values; 
+    } else if (embeddingResult?.values) {
+        embeddingArray = embeddingResult.values; 
+    } else if (Array.isArray(embeddingResult)) {
+        embeddingArray = embeddingResult; 
+    } else {
+        throw new Error("Failed to parse embedding array from Gemini.");
+    }
 
     // --- STORAGE ---
     const insertData = {
@@ -124,10 +134,9 @@ export async function POST(req: Request) {
       processed_title: aiJson.title,
       processed_summary: aiJson.summary,
       processed_tags: aiJson.tags,
-      embedding: embedding,
+      embedding: embeddingArray, // <--- Safely passes the flat array!
       is_favorited: false
     };
-
     const { data: newItem, error: dbError } = await supabase.from('vault_items').insert(insertData).select().single()
     if (dbError) throw new Error(`Database error: ${dbError.message}`);
 
